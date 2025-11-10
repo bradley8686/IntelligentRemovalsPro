@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang='en'><head><meta charset='utf-8'/><meta name='viewport' content='width=device-width, initial-scale=1'/>
+<title>Intelligent Removals Pro — Dashboard</title>
+<style>
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;margin:0;background:#0f172a;color:#e5e7eb}
+header{background:linear-gradient(135deg,#0b63d6,#007BFF);padding:18px 20px;display:flex;align-items:center;gap:12px}
+header h1{margin:0;font-size:22px}
+header img{height:36px;width:auto;border-radius:6px;border:1px solid #195bb6;background:#0b63d61a;padding:4px}
+.container{max-width:1100px;margin:0 auto;padding:16px}
+.card{background:#111827;border:1px solid #1f2937;border-radius:12px;padding:14px;margin-bottom:12px}
+a.btn{display:inline-block;background:#0b63d6;border:1px solid #195bb6;padding:10px 12px;color:#fff;text-decoration:none;border-radius:10px}
+table{width:100%;border-collapse:collapse} th,td{border-bottom:1px solid #1f2937;padding:8px;text-align:left}
+.footer{margin-top:10px;opacity:.7;font-size:12px;display:flex;align-items:center;gap:8px}
+.footer img{height:18px;width:auto;opacity:.9}
+</style></head>
+<body>
+  <header class='hero'>
+    <img src='./assets/logo.png' alt='Logo'/>
+    <div>
+      <h1>Intelligent Removals Pro</h1>
+      <div style='opacity:.9'>AI video inventory · lorry recommendation</div>
+    </div>
+  </header>
+  <div class='container'>
+    <div class='card'>
+      <h3>Live AI Camera</h3>
+      <p>Detect items in real time using your webcam. We'll auto-calc weight, volume, and recommend a vehicle.</p>
+      <a class='btn' href='./camera.html'>Open AI Camera</a>
+    </div>
+    <div class='card'>
+      <h3>Mock Inventory Report</h3>
+      <table><thead><tr><th>Item</th><th>Qty</th><th>Weight (kg)</th><th>Volume (m³)</th></tr></thead><tbody id='tbody'></tbody></table>
+    </div>
+    <div class='footer'>
+      <img src='./assets/logo.png' alt='Logo'/><span>© Intelligent Removals Pro</span>
+    </div>
+  </div>
+<script>
+const MOCK=[{item:'sofa',qty:1,weight_kg:45,volume_m3:1.8},{item:'bed',qty:1,weight_kg:50,volume_m3:2.0},{item:'boxes',qty:10,weight_kg:100,volume_m3:3.0}];
+document.getElementById('tbody').innerHTML=MOCK.map(r=>`<tr><td>${r.item}</td><td>${r.qty}</td><td>${r.weight_kg}</td><td>${r.volume_m3}</td></tr>`).join('');
+</script>
+</body></html>

@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang='en'><head><meta charset='utf-8'/><meta name='viewport' content='width=device-width,initial-scale=1'/>
+<title>AI Camera — Intelligent Removals Pro</title>
+<style>
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;margin:0;background:#0f172a;color:#e2e8f0}
+header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#111827;border-bottom:1px solid #1f2937}
+header .left{display:flex;align-items:center;gap:10px}
+header img{height:28px;width:auto;border-radius:6px;border:1px solid #1f2937;background:#0b63d61a;padding:3px}
+a.btn{background:#2563eb;color:#fff;padding:8px 12px;border-radius:8px;text-decoration:none;margin-right:8px}
+.wrap{display:grid;grid-template-columns:1.3fr 1fr;gap:12px;padding:12px}
+.panel{background:#111827;border:1px solid #1f2937;border-radius:10px;padding:10px}
+#video{width:100%;height:auto;border-radius:10px;background:#000} #overlay{position:absolute;top:0;left:0}
+.stack{position:relative} table{width:100%;border-collapse:collapse} th,td{border-bottom:1px solid #1f2937;padding:8px 6px;text-align:left;font-size:14px}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px} button{padding:8px 10px;border-radius:8px;border:1px solid #374151;background:#1f2937;color:#e5e7eb;cursor:pointer}
+button.primary{background:#2563eb;border-color:#2563eb} .muted{color:#9ca3af;font-size:12px}
+.summary{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px} .card{background:#0d1426;border:1px solid #1f2937;border-radius:8px;padding:10px}
+</style>
+<script src='https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js'></script>
+<script src='https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3'></script>
+</head>
+<body>
+<header>
+  <div class='left'>
+    <img src='./assets/logo.png' alt='Logo'/>
+    <strong>AI Camera — Live Inventory</strong>
+  </div>
+  <nav><a class='btn' href='./index.html'>Dashboard</a></nav>
+</header>
+<div class='wrap'>
+  <div class='panel'>
+    <div class='controls'>
+      <button id='startBtn' class='primary'>Start Camera</button>
+      <button id='stopBtn'>Stop</button>
+      <button id='resetBtn'>Reset Counts</button>
+      <button id='exportBtn'>Export JSON</button>
+      <span class='muted' id='status'>Model: loading…</span>
+    </div>
+    <div class='stack'>
+      <video id='video' autoplay muted playsinline></video>
+      <canvas id='overlay'></canvas>
+    </div>
+  </div>
+  <div class='panel'>
+    <div class='controls'><div class='muted'>Detected items & totals:</div></div>
+    <table><thead><tr><th>Item</th><th>Qty</th><th>Weight (kg)</th><th>Volume (m³)</th></tr></thead><tbody id='tbody'></tbody></table>
+    <div class='summary'>
+      <div class='card'>Total Weight: <strong id='tw'>0 kg</strong></div>
+      <div class='card'>Total Volume: <strong id='tv'>0 m³</strong></div>
+      <div class='card' style='grid-column:1/-1;'>Recommended Vehicle: <strong id='veh'>—</strong></div>
+    </div>
+  </div>
+</div>
+<script>
+let model, stream, ctx, canvas, video;
+const counts = {};
+const weightMap={sofa:45,bed:50,fridge:70,tv:25,box:10,chair:8,table:20,wardrobe:55,washing_machine:70};
+const volumeMap={sofa:1.8,bed:1.5,fridge:1.0,tv:0.4,box:0.25,chair:0.2,table:0.6,wardrobe:1.6,washing_machine:0.8};
+const LABEL_MAP={'couch':'sofa','refrigerator':'fridge','dining table':'table','book':'box'};
+function mapLabel(lbl){ const n=(lbl||'').toLowerCase(); return LABEL_MAP[n]||n.replace(/\s+/g,'_'); }
+async function init(){
+  video=document.getElementById('video'); canvas=document.getElementById('overlay'); ctx=canvas.getContext('2d');
+  try{ document.getElementById('status').textContent='Model: loading…'; model=await cocoSsd.load({base:'lite_mobilenet_v2'}); document.getElementById('status').textContent='Model: ready'; }
+  catch(e){ document.getElementById('status').textContent='Model failed to load: '+e.message; }
+}
+async function startCamera(){ try{
+  stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false});
+  video.srcObject=stream; await video.play(); resizeCanvas(); requestAnimationFrame(predictLoop);
+} catch(e){ alert('Camera error: '+e.message); } }
+function stopCamera(){ if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; } }
+function resizeCanvas(){ canvas.width=video.videoWidth; canvas.height=video.videoHeight; }
+function drawBoxes(preds){
+  ctx.clearRect(0,0,canvas.width,canvas.height); ctx.lineWidth=2; ctx.font='14px system-ui';
+  preds.forEach(p=>{ const [x,y,w,h]=p.bbox; ctx.strokeStyle='#22d3ee'; ctx.fillStyle='rgba(34,211,238,0.15)';
+    ctx.fillRect(x,y,w,h); ctx.strokeRect(x,y,w,h); ctx.fillStyle='#e5e7eb'; ctx.fillText(`${p.class} ${(p.score*100).toFixed(0)}%`, x+4, y+16); });
+}
+function tableAndTotals(){
+  const tbody=document.getElementById('tbody'); const rows=[]; let totalW=0,totalV=0;
+  Object.keys(counts).forEach(k=>{ const qty=Math.max(1,Math.round(counts[k])); const w=(weightMap[k]||0)*qty; const v=(volumeMap[k]||0)*qty;
+    totalW+=w; totalV+=v; rows.push(`<tr><td>${k.replace(/_/g,' ')}</td><td>${qty}</td><td>${w}</td><td>${v.toFixed(1)}</td></tr>`); });
+  tbody.innerHTML=rows.sort().join(''); document.getElementById('tw').textContent=Math.round(totalW)+' kg';
+  document.getElementById('tv').textContent=(Math.round(totalV*10)/10)+' m³'; document.getElementById('veh').textContent=recommendVehicle(totalW,totalV);
+}
+function recommendVehicle(weight,volume){ if(weight>1200||volume>10) return '7.5T Truck'; if(weight>750||volume>6) return 'Luton Van'; if(weight>250||volume>2) return 'Medium Van'; return 'Small Van'; }
+function updateCounts(preds){
+  let changed=false; preds.forEach(p=>{ if(p.score<0.6) return; const label=mapLabel(p.class); counts[label]=(counts[label]||0)+1/15; changed=true; });
+  if(changed) tableAndTotals();
+}
+async function predictLoop(){ if(!model||!video.videoWidth){ requestAnimationFrame(predictLoop); return; } const preds=await model.detect(video); drawBoxes(preds); updateCounts(preds); requestAnimationFrame(predictLoop); }
+function exportJSON(){
+  const items=Object.keys(counts).map(k=>({item:k,qty:Math.max(1,Math.round(counts[k]))}));
+  const out={ items, totals:{ weight_kg:parseInt(document.getElementById('tw').textContent)||0, volume_m3:parseFloat((document.getElementById('tv').textContent||'0').replace(' m³',''))||0 }, vehicle_recommendation:document.getElementById('veh').textContent, generated_at:new Date().toISOString() };
+  const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='live-inventory.json'; a.click(); URL.revokeObjectURL(url);
+}
+document.getElementById('startBtn').addEventListener('click', startCamera);
+document.getElementById('stopBtn').addEventListener('click', stopCamera);
+document.getElementById('exportBtn').addEventListener('click', exportJSON);
+document.getElementById('resetBtn').addEventListener('click', ()=>{ for(const k in counts) delete counts[k]; tableAndTotals(); });
+window.addEventListener('load', init); window.addEventListener('resize', resizeCanvas);
+</script>
+</body></html>

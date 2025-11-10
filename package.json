@@ -1,0 +1,57 @@
+{
+  "name": "intelligent-removals-pro",
+  "version": "1.0.0",
+  "productName": "Intelligent Removals Pro",
+  "description": "AI-powered video inventory and lorry recommendation app for house removals.",
+  "author": "Intelligent Removals Pro",
+  "license": "Proprietary",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win nsis",
+    "build:mac": "electron-builder --mac dmg",
+    "build:linux": "electron-builder --linux AppImage deb",
+    "build": "electron-builder -mwl"
+  },
+  "build": {
+    "appId": "com.intelligent.removals.pro",
+    "files": [
+      "**/*"
+    ],
+    "directories": {
+      "buildResources": "build"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "build/icon.icns"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ]
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "bradley8686",
+        "repo": "IntelligentRemovalsPro"
+      }
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bradley8686/IntelligentRemovalsPro"
+  },
+  "devDependencies": {
+    "electron": "^32.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "dependencies": {
+    "electron-updater": "^6.1.7"
+  }
+}
