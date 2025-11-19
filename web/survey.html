@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Intelligent Removals Pro – Self Survey</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    :root {
+      --bg: #020617;
+      --bg-panel: #0b1120;
+      --accent: #00bfff;
+      --accent-dark: #0044aa;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #1e293b 0, #020617 45%, #000 100%);
+      color: var(--text);
+    }
+
+    header {
+      padding: 12px 16px;
+      background: linear-gradient(90deg, var(--accent-dark), var(--accent));
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header .title {
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+
+    header .tagline {
+      font-size: 0.8rem;
+      opacity: 0.9;
+    }
+
+    main {
+      padding: 12px;
+      max-width: 1200px;
+      margin: 0 auto 32px;
+    }
+
+    .section-title {
+      margin: 10px 0 4px;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+    }
+
+    .card {
+      background: rgba(15, 23, 42, 0.95);
+      border-radius: 14px;
+      padding: 12px;
+      margin-bottom: 12px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+    }
+
+    .grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    @media (min-width: 768px) {
+      .grid-2 {
+        grid-template-columns: 2fr 3fr;
+      }
+      .grid-3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    label {
+      font-size: 0.85rem;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      background: #020617;
+      color: var(--text);
+      padding: 8px 10px;
+      font-size: 0.9rem;
+    }
+
+    textarea {
+      min-height: 60px;
+      resize: vertical;
+    }
+
+    button {
+      border-radius: 999px;
+      border: none;
+      padding: 8px 14px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+      color: white;
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid rgba(148, 163, 184, 0.6);
+    }
+
+    .btn-small {
+      padding: 6px 10px;
+      font-size: 0.8rem;
+    }
+
+    video {
+      width: 100%;
+      max-height: 260px;
+      border-radius: 10px;
+      background: black;
+    }
+
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    .items-table th,
+    .items-table td {
+      padding: 4px 6px;
+      border-bottom: 1px solid rgba(30, 64, 175, 0.3);
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      background: rgba(15, 118, 110, 0.12);
+    }
+
+    .pill-label {
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .summary-box {
+      padding: 10px;
+      border-radius: 10px;
+      background: radial-gradient(circle at top left, rgba(56,189,248,0.25), rgba(15,23,42,0.95));
+      border: 1px solid rgba(56, 189, 248, 0.5);
+      margin-top: 8px;
+    }
+
+    .summary-line {
+      font-size: 0.85rem;
+      margin: 2px 0;
+    }
+
+    .lorry-tag {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.6);
+      font-size: 0.8rem;
+    }
+
+    .footer-note {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      font-size: 0.8rem;
+      background: #020617;
+      border-radius: 8px;
+      padding: 8px;
+      max-height: 160px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <div class="title">Intelligent Removals Pro</div>
+      <div class="tagline">Customer Self-Survey · Smart. Secure. Seamless Moves.</div>
+    </div>
+  </header>
+
+  <main>
+    <!-- CUSTOMER DETAILS -->
+    <div class="section-title">Customer details</div>
+    <div class="card">
+      <div class="grid grid-3">
+        <div>
+          <label for="custName">Name</label>
+          <input id="custName" placeholder="Your full name">
+        </div>
+        <div>
+          <label for="custEmail">Email</label>
+          <input id="custEmail" type="email" placeholder="you@example.com">
+        </div>
+        <div>
+          <label for="custPhone">Phone</label>
+          <input id="custPhone" type="tel" placeholder="Mobile number">
+        </div>
+      </div>
+      <div class="grid" style="margin-top:8px;">
+        <div>
+          <label for="fromAddress">From address</label>
+          <textarea id="fromAddress" placeholder="Where are we moving FROM?"></textarea>
+        </div>
+        <div>
+          <label for="toAddress">To address</label>
+          <textarea id="toAddress" placeholder="Where are we moving TO?"></textarea>
+        </div>
+      </div>
+      <div class="grid grid-3" style="margin-top:8px;">
+        <div>
+          <label for="moveDate">Preferred move date</label>
+          <input id="moveDate" type="date">
+        </div>
+        <div>
+          <label for="accessNotes">Access / parking notes</label>
+          <input id="accessNotes" placeholder="E.g. permit parking, stairs, narrow lane">
+        </div>
+      </div>
+    </div>
+
+    <!-- ROOM & CAMERA -->
+    <div class="section-title">Rooms and camera</div>
+    <div class="card grid grid-2">
+      <div>
+        <label for="roomSelect">Current room</label>
+        <select id="roomSelect">
+          <option value="Lounge">Lounge / Living room</option>
+          <option value="Kitchen">Kitchen</option>
+          <option value="Bedroom 1">Bedroom 1</option>
+          <option value="Bedroom 2">Bedroom 2</option>
+          <option value="Bedroom 3">Bedroom 3</option>
+          <option value="Dining room">Dining room</option>
+          <option value="Garage">Garage</option>
+          <option value="Loft">Loft</option>
+          <option value="Garden">Garden / Outside</option>
+          <option value="Other">Other</option>
+        </select>
+        <p style="font-size:0.8rem;color:var(--muted);margin-top:4px;">
+          Select the room you’re currently in. Use the camera to walk slowly around and then add the main items below.
+        </p>
+
+        <video id="video" autoplay playsinline></video>
+        <div style="margin-top:6px; display:flex; gap:8px;">
+          <button class="btn-primary btn-small" id="startCamBtn">Start camera</button>
+          <button class="btn-outline btn-small" id="stopCamBtn">Stop camera</button>
+        </div>
+        <p class="footer-note">
+          For privacy, no footage is uploaded automatically. This demo only runs in your browser.  
+          (For full AI detection, the removal company can enable secure cloud processing.)
+        </p>
+      </div>
+
+      <!-- ITEMS + WEIGHT -->
+      <div>
+        <div class="grid grid-3">
+          <div>
+            <label for="itemName">Item</label>
+            <select id="itemName">
+              <option value="sofa">Sofa</option>
+              <option value="armchair">Armchair</option>
+              <option value="bed">Bed</option>
+              <option value="wardrobe">Wardrobe</option>
+              <option value="chest of drawers">Chest of drawers</option>
+              <option value="table">Table</option>
+              <option value="chair">Chair</option>
+              <option value="fridge">Fridge / Freezer</option>
+              <option value="washing machine">Washing machine</option>
+              <option value="tumble dryer">Tumble dryer</option>
+              <option value="tv">TV</option>
+              <option value="box">Packed box</option>
+              <option value="other">Other item</option>
+            </select>
+          </div>
+          <div>
+            <label for="itemQty">Quantity</label>
+            <input id="itemQty" type="number" min="1" value="1">
+          </div>
+          <div>
+            <label>&nbsp;</label>
+            <button id="addItemBtn" class="btn-primary btn-small" style="width:100%;">Add item</button>
+          </div>
+        </div>
+
+        <table class="items-table" id="itemsTable" style="margin-top:8px;">
+          <thead>
+            <tr>
+              <th>Room</th>
+              <th>Item</th>
+              <th>Qty</th>
+              <th>Weight est.</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+
+        <div class="summary-box" id="summaryBox">
+          <div class="summary-line">
+            <span class="pill-label">Total estimated weight:</span>
+            <span class="pill"><span id="totalWeight">0</span> kg</span>
+          </div>
+          <div class="summary-line">
+            <span class="pill-label">Recommended vehicle:</span>
+            <span class="lorry-tag" id="lorryTag">Small van</span>
+          </div>
+          <div class="summary-line" style="font-size:0.75rem;color:var(--muted);">
+            This is an estimate only – final vehicle may change after a professional check.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REVIEW & SUBMIT -->
+    <div class="section-title">Review & submit</div>
+    <div class="card">
+      <p style="font-size:0.85rem; color:var(--muted);">
+        When you’re happy, tap <strong>Generate summary</strong>. You can then copy and paste it into an email or send a screenshot to your removals company.
+      </p>
+      <button class="btn-primary" id="generateSummaryBtn">Generate summary</button>
+
+      <pre id="summaryOutput" style="margin-top:8px;">Summary will appear here.</pre>
+    </div>
+  </main>
+
+  <script>
+    // Very simple fixed weight map for demo
+    const weightMap = {
+      "sofa": 45,
+      "armchair": 25,
+      "bed": 50,
+      "wardrobe": 60,
+      "chest of drawers": 40,
+      "table": 30,
+      "chair": 10,
+      "fridge": 70,
+      "washing machine": 70,
+      "tumble dryer": 60,
+      "tv": 20,
+      "box": 10,
+      "other": 15
+    };
+
+    let stream = null;
+    const video = document.getElementById('video');
+    const startCamBtn = document.getElementById('startCamBtn');
+    const stopCamBtn = document.getElementById('stopCamBtn');
+
+    const roomSelect = document.getElementById('roomSelect');
+    const itemName = document.getElementById('itemName');
+    const itemQty = document.getElementById('itemQty');
+    const addItemBtn = document.getElementById('addItemBtn');
+    const itemsTableBody = document.querySelector('#itemsTable tbody');
+    const totalWeightEl = document.getElementById('totalWeight');
+    const lorryTag = document.getElementById('lorryTag');
+    const generateSummaryBtn = document.getElementById('generateSummaryBtn');
+    const summaryOutput = document.getElementById('summaryOutput');
+
+    let items = [];
+
+    async function startCamera() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+      } catch (err) {
+        alert('Could not access camera: ' + err.message);
+      }
+    }
+
+    function stopCamera() {
+      if (stream) {
+        stream.getTracks().forEach(t => t.stop());
+        stream = null;
+        video.srcObject = null;
+      }
+    }
+
+    function recomputeTotals() {
+      let totalWeight = 0;
+      items.forEach(it => {
+        const perItem = weightMap[it.item] || 15;
+        totalWeight += perItem * it.qty;
+      });
+
+      totalWeightEl.textContent = totalWeight.toFixed(0);
+
+      let lorry = 'Small van';
+      if (totalWeight > 1200) lorry = '7.5t truck';
+      else if (totalWeight > 750) lorry = 'Luton van';
+      else if (totalWeight > 250) lorry = 'Medium van';
+
+      lorryTag.textContent = lorry;
+    }
+
+    function renderItems() {
+      itemsTableBody.innerHTML = '';
+      items.forEach(it => {
+        const tr = document.createElement('tr');
+        const estPer = weightMap[it.item] || 15;
+        const estTot = estPer * it.qty;
+
+        tr.innerHTML = `
+          <td>${it.room}</td>
+          <td>${it.item}</td>
+          <td>${it.qty}</td>
+          <td>${estTot} kg</td>
+        `;
+        itemsTableBody.appendChild(tr);
+      });
+    }
+
+    function addItem() {
+      const room = roomSelect.value;
+      const item = itemName.value;
+      const qty = parseInt(itemQty.value, 10) || 1;
+
+      items.push({ room, item, qty });
+      renderItems();
+      recomputeTotals();
+
+      itemQty.value = '1';
+    }
+
+    function generateSummary() {
+      const summary = {
+        customer: {
+          name: document.getElementById('custName').value,
+          email: document.getElementById('custEmail').value,
+          phone: document.getElementById('custPhone').value
+        },
+        fromAddress: document.getElementById('fromAddress').value,
+        toAddress: document.getElementById('toAddress').value,
+        moveDate: document.getElementById('moveDate').value,
+        accessNotes: document.getElementById('accessNotes').value,
+        items,
+        totals: {
+          totalWeightKg: parseFloat(totalWeightEl.textContent) || 0,
+          recommendedVehicle: lorryTag.textContent
+        }
+      };
+
+      const lines = [];
+      lines.push('Intelligent Removals Pro – Self Survey');
+      lines.push('--------------------------------------');
+      lines.push(`Name: ${summary.customer.name}`);
+      lines.push(`Email: ${summary.customer.email}`);
+      lines.push(`Phone: ${summary.customer.phone}`);
+      lines.push('');
+      lines.push('From:');
+      lines.push(summary.fromAddress || '(not provided)');
+      lines.push('');
+      lines.push('To:');
+      lines.push(summary.toAddress || '(not provided)');
+      lines.push('');
+      lines.push(`Move date: ${summary.moveDate || '(not provided)'}`);
+      lines.push(`Access / parking notes: ${summary.accessNotes || '(none provided)'}`);
+      lines.push('');
+      lines.push('Items:');
+      if (items.length === 0) {
+        lines.push('  (no items added)');
+      } else {
+        items.forEach(it => {
+          const per = weightMap[it.item] || 15;
+          const est = per * it.qty;
+          lines.push(`  - ${it.room}: ${it.qty} × ${it.item} (≈ ${est} kg)`);
+        });
+      }
+      lines.push('');
+      lines.push(`Total estimated weight: ${summary.totals.totalWeightKg} kg`);
+      lines.push(`Recommended vehicle: ${summary.totals.recommendedVehicle}`);
+      lines.push('');
+      lines.push('This is an automated estimate only. Final vehicle / price will be confirmed by the removals company.');
+
+      summaryOutput.textContent = lines.join('\n');
+    }
+
+    // Hook up buttons
+    startCamBtn.addEventListener('click', startCamera);
+    stopCamBtn.addEventListener('click', stopCamera);
+    addItemBtn.addEventListener('click', addItem);
+    generateSummaryBtn.addEventListener('click', generateSummary);
+  </script>
+</body>
+</html>
