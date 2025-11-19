@@ -274,10 +274,16 @@
         </p>
 
         <video id="video" autoplay playsinline></video>
-        <div style="margin-top:6px; display:flex; gap:8px;">
-          <button class="btn-primary btn-small" id="startCamBtn">Start camera</button>
-          <button class="btn-outline btn-small" id="stopCamBtn">Stop camera</button>
-        </div>
+<div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
+  <button class="btn-primary btn-small" id="startCamBtn">Start camera</button>
+  <button class="btn-outline btn-small" id="flipCamBtn">Flip camera</button>
+  <button class="btn-outline btn-small" id="stopCamBtn">Stop camera</button>
+</div>
+<p class="footer-note">
+  On phones and tablets we’ll try to use the back camera first.  
+  You can tap “Flip camera” to swap between front and back if your device supports it.
+</p>
+
         <p class="footer-note">
           For privacy, no footage is uploaded automatically. This demo only runs in your browser.  
           (For full AI detection, the removal company can enable secure cloud processing.)
@@ -374,32 +380,58 @@
     };
 
     let stream = null;
+    let currentFacing = "environment"; // try back camera first
+
     const video = document.getElementById('video');
     const startCamBtn = document.getElementById('startCamBtn');
     const stopCamBtn = document.getElementById('stopCamBtn');
+    const flipCamBtn = document.getElementById('flipCamBtn');
 
-    const roomSelect = document.getElementById('roomSelect');
-    const itemName = document.getElementById('itemName');
-    const itemQty = document.getElementById('itemQty');
-    const addItemBtn = document.getElementById('addItemBtn');
-    const itemsTableBody = document.querySelector('#itemsTable tbody');
-    const totalWeightEl = document.getElementById('totalWeight');
-    const lorryTag = document.getElementById('lorryTag');
-    const generateSummaryBtn = document.getElementById('generateSummaryBtn');
-    const summaryOutput = document.getElementById('summaryOutput');
+    async function startCamera(forceFacing) {
+      const facing = forceFacing || currentFacing;
 
-    let items = [];
-
-    async function startCamera() {
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        // stop any existing stream first
+        if (stream) {
+          stream.getTracks().forEach(t => t.stop());
+          stream = null;
+        }
+
+        // Try requested facing (back or front)
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { exact: facing } }
+        });
+
+        currentFacing = facing;
         video.srcObject = stream;
+        await video.play();
       } catch (err) {
-        alert('Could not access camera: ' + err.message);
+        console.warn(`Failed to use facingMode=${facing}, falling back to default camera…`, err);
+
+        // Fallback: just ask for any camera
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          video.srcObject = stream;
+          await video.play();
+          currentFacing = "user"; // assume front
+        } catch (err2) {
+          alert('Could not access camera: ' + err2.message);
+        }
       }
     }
 
     function stopCamera() {
+      if (stream) {
+        stream.getTracks().forEach(t => t.stop());
+        stream = null;
+      }
+      video.srcObject = null;
+    }
+
+    async function flipCamera() {
+      const newFacing = currentFacing === "environment" ? "user" : "environment";
+      await startCamera(newFacing);
+    }
       if (stream) {
         stream.getTracks().forEach(t => t.stop());
         stream = null;
@@ -507,10 +539,12 @@
     }
 
     // Hook up buttons
-    startCamBtn.addEventListener('click', startCamera);
-    stopCamBtn.addEventListener('click', stopCamera);
-    addItemBtn.addEventListener('click', addItem);
-    generateSummaryBtn.addEventListener('click', generateSummary);
+    startCamBtn.addEventListener('click', () => startCamera("environment")); // back camera by default
+stopCamBtn.addEventListener('click', stopCamera);
+flipCamBtn.addEventListener('click', flipCamera);
+addItemBtn.addEventListener('click', addItem);
+generateSummaryBtn.addEventListener('click', generateSummary);
+
   </script>
 </body>
 </html>
