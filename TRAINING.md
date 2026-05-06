@@ -50,12 +50,13 @@ Avoid:
 ## Training Pipeline
 
 1. Capture labelled photos from the phone app.
-2. Put photos into folders by label.
-3. Annotate boxes around each item using an object-detection labelling tool.
-4. Train a custom object-detection model.
-5. Export the model to TensorFlow.js format.
-6. Place the model files under `models/removals/`.
-7. Update `custom-model.example.json` and wire the app to load the custom model.
+2. Use "Find Examples Online" to research what each class looks like, but do not blindly copy copyrighted images into a commercial dataset.
+3. Put your own captured photos into folders by label.
+4. Annotate boxes around each item using an object-detection labelling tool.
+5. Train a custom object-detection model.
+6. Export the model to TensorFlow.js format.
+7. Place the model files under `models/removals/`.
+8. Update `custom-model.json` so the hosted phone app can discover the online model.
 
 ## Practical Target
 
@@ -67,3 +68,15 @@ For a first commercial model, aim for:
 - A test set kept separate from training.
 
 The app should keep manual item entry as a fallback, because even a trained model will occasionally miss or misclassify items.
+
+## Internet Learning
+
+The phone app can now help research labels online and check for a published custom model config. It does not automatically train from the open internet. For a commercial app, automatic internet scraping is risky because images may be copyrighted, mislabelled, or irrelevant.
+
+The recommended route is:
+
+1. Use internet search for reference only.
+2. Capture your own real removals photos.
+3. Train on owned/licensed data.
+4. Publish the trained TensorFlow.js model.
+5. Set `custom-model.json` to `"enabled": true`.

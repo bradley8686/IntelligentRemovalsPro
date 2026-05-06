@@ -1,0 +1,8 @@
+{
+  "enabled": false,
+  "format": "tensorflowjs_graph_model",
+  "model_url": "./models/removals/model.json",
+  "labels_url": "./models/removals/labels.json",
+  "minimum_confidence": 0.45,
+  "status": "not_trained_yet"
+}

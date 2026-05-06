@@ -210,9 +210,11 @@
       <div class="grid">
         <select id="trainingLabel" class="wide" aria-label="Training label"></select>
         <button id="captureTrainingBtn" class="good">Capture Labelled Photo</button>
+        <button id="searchTrainingBtn">Find Examples Online</button>
         <button id="downloadLabelsBtn">Labels CSV</button>
       </div>
       <div class="muted" id="trainingStatus" style="margin-top:8px;">Start the camera, choose the item label, then capture clear photos from different angles.</div>
+      <div class="muted" id="modelStatus" style="margin-top:6px;">Online model: checking for updates...</div>
     </section>
 
     <section class="panel">
@@ -264,6 +266,7 @@
     let lastFrameAt = 0;
     let deferredInstallPrompt = null;
     let capturedTrainingCount = 0;
+    let customModelConfig = null;
     const scanIntervalMs = 240;
     const drawThreshold = 0.35;
     const addThreshold = 0.48;
@@ -477,6 +480,26 @@
         .join('\n');
       download('removals-training-labels.csv', csv, 'text/csv');
     }
+    function searchTrainingExamples() {
+      const label = el('trainingLabel').value;
+      const item = getItem(label);
+      const query = encodeURIComponent(`${item.label} removals furniture object photos`);
+      window.open(`https://www.google.com/search?tbm=isch&q=${query}`, '_blank', 'noopener,noreferrer');
+    }
+    async function checkOnlineModelConfig() {
+      try {
+        const response = await fetch('../custom-model.json', { cache: 'no-store' });
+        if (!response.ok) throw new Error('No published custom model yet');
+        customModelConfig = await response.json();
+        if (customModelConfig && customModelConfig.enabled) {
+          el('modelStatus').textContent = `Online model: available at ${customModelConfig.model_url}`;
+        } else {
+          el('modelStatus').textContent = 'Online model: config found, custom model disabled';
+        }
+      } catch {
+        el('modelStatus').textContent = 'Online model: not trained yet - use Training Capture first';
+      }
+    }
     function captureTrainingPhoto() {
       if (!video || !video.videoWidth) {
         el('trainingStatus').textContent = 'Start the camera first, then capture the item.';
@@ -673,6 +696,7 @@
       loadDraft();
       render();
       if ('serviceWorker' in navigator) navigator.serviceWorker.register('../service-worker.js');
+      checkOnlineModelConfig();
       try {
         model = await cocoSsd.load({ base: 'lite_mobilenet_v2' });
         el('status').textContent = 'Model: ready';
@@ -721,6 +745,7 @@
     el('csvBtn').addEventListener('click', exportCsv);
     el('printBtn').addEventListener('click', printQuote);
     el('captureTrainingBtn').addEventListener('click', captureTrainingPhoto);
+    el('searchTrainingBtn').addEventListener('click', searchTrainingExamples);
     el('downloadLabelsBtn').addEventListener('click', trainingLabelsCsv);
     window.addEventListener('resize', resizeCanvas);
     window.addEventListener('load', init);
