@@ -9,6 +9,7 @@
   "scripts": {
     "start": "electron .",
     "test": "node --check main.js && node --check create-icon-pack.js",
+    "training:sort": "node scripts/sort-training-captures.js",
     "build:win": "electron-builder --win nsis",
     "build:mac": "electron-builder --mac dmg",
     "build:linux": "electron-builder --linux AppImage deb",

@@ -35,6 +35,8 @@ When hosted over HTTPS, phones can open the URL and install it to the home scree
 
 The phone app also includes a Training Capture section for collecting labelled photos to train a removals-specific object detector. See `TRAINING.md`.
 
+Training pipeline files live under `training/`. Start with `training/TRAINING_PIPELINE.md`.
+
 ## Release notes
 
 - Windows installer is configured through `electron-builder` and NSIS.
