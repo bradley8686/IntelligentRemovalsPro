@@ -1,7 +1,9 @@
-const { app, BrowserWindow, dialog, Menu } = require('electron');
-const isDev = !app.isPackaged;
+const { app, BrowserWindow, dialog, Menu, shell } = require('electron');
+const path = require('path');
 
-let splash, mainWindow;
+const isDev = !app.isPackaged;
+let splash;
+let mainWindow;
 let autoUpdater;
 
 if (!isDev) {
@@ -9,22 +11,46 @@ if (!isDev) {
   autoUpdater.autoDownload = true;
 }
 
+function commonWebPreferences() {
+  return {
+    contextIsolation: true,
+    sandbox: true,
+    nodeIntegration: false,
+    webSecurity: true
+  };
+}
+
+function hardenWindow(win) {
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith('https://')) shell.openExternal(url);
+    return { action: 'deny' };
+  });
+  win.webContents.on('will-navigate', (event, url) => {
+    const current = win.webContents.getURL();
+    if (current && !url.startsWith('file://')) event.preventDefault();
+  });
+}
+
 function openAbout() {
   const about = new BrowserWindow({
-    width: 420,
-    height: 520,
+    width: 440,
+    height: 540,
     resizable: false,
     minimizable: false,
     maximizable: false,
-    title: 'About – Intelligent Removals Pro',
-    modal: true,
-    parent: mainWindow || null,
-    backgroundColor: '#0b63d6',
-    show: true,
-    webPreferences: { contextIsolation: true, sandbox: true }
+    title: 'About - Intelligent Removals Pro',
+    modal: Boolean(mainWindow),
+    parent: mainWindow || undefined,
+    backgroundColor: '#0b1220',
+    show: false,
+    webPreferences: commonWebPreferences()
   });
-  const ver = encodeURIComponent(app.getVersion());
-  about.loadFile('about.html', { search: `?v=${ver}` });
+
+  hardenWindow(about);
+  about.loadFile(path.join(__dirname, 'about.html'), {
+    search: `?v=${encodeURIComponent(app.getVersion())}`
+  });
+  about.once('ready-to-show', () => about.show());
 }
 
 function checkForUpdatesManual() {
@@ -36,13 +62,22 @@ function checkForUpdatesManual() {
     });
     return;
   }
+
   dialog.showMessageBox({ type: 'info', message: 'Checking for updates...', buttons: [] });
   autoUpdater.checkForUpdates();
   autoUpdater.once('update-not-available', () => {
-    dialog.showMessageBox({ type: 'info', title: 'Up to Date', message: 'You are running the latest version of Intelligent Removals Pro.' });
+    dialog.showMessageBox({
+      type: 'info',
+      title: 'Up to Date',
+      message: 'You are running the latest version of Intelligent Removals Pro.'
+    });
   });
   autoUpdater.once('update-available', () => {
-    dialog.showMessageBox({ type: 'info', title: 'Update Available', message: 'A new version is being downloaded in the background.' });
+    dialog.showMessageBox({
+      type: 'info',
+      title: 'Update Available',
+      message: 'A new version is being downloaded in the background.'
+    });
   });
   autoUpdater.once('update-downloaded', () => {
     const res = dialog.showMessageBoxSync({
@@ -59,15 +94,31 @@ function buildMenu() {
   const template = [
     ...(process.platform === 'darwin' ? [{
       label: app.name,
-      submenu: [{ role: 'about', label: 'About (System)' }, { type: 'separator' }, { role: 'quit' }]
+      submenu: [{ role: 'about', label: 'About Intelligent Removals Pro' }, { type: 'separator' }, { role: 'quit' }]
     }] : []),
     { label: 'File', submenu: [{ role: 'quit' }] },
-    { label: 'View', submenu: [{ role: 'reload' }, { role: 'toggleDevTools', accelerator: 'Ctrl+Shift+I' },
-      { type: 'separator' }, { role: 'resetZoom' }, { role: 'zoomIn' }, { role: 'zoomOut' }, { type: 'separator' }, { role: 'togglefullscreen' }] },
-    { label: 'Help', submenu: [{ label: 'Check for Updates…', click: checkForUpdatesManual }, { label: 'About Intelligent Removals Pro', click: openAbout }] }
+    {
+      label: 'View',
+      submenu: [
+        { role: 'reload' },
+        { role: 'toggleDevTools', accelerator: 'Ctrl+Shift+I' },
+        { type: 'separator' },
+        { role: 'resetZoom' },
+        { role: 'zoomIn' },
+        { role: 'zoomOut' },
+        { type: 'separator' },
+        { role: 'togglefullscreen' }
+      ]
+    },
+    {
+      label: 'Help',
+      submenu: [
+        { label: 'Check for Updates...', click: checkForUpdatesManual },
+        { label: 'About Intelligent Removals Pro', click: openAbout }
+      ]
+    }
   ];
-  const menu = Menu.buildFromTemplate(template);
-  Menu.setApplicationMenu(menu);
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
 
 function createWindow() {
@@ -78,26 +129,31 @@ function createWindow() {
     alwaysOnTop: true,
     transparent: false,
     resizable: false,
-    backgroundColor: '#0b63d6',
-    webPreferences: { contextIsolation: true }
+    backgroundColor: '#0b1220',
+    webPreferences: commonWebPreferences()
   });
-  splash.loadFile('splash.html');
+  hardenWindow(splash);
+  splash.loadFile(path.join(__dirname, 'splash.html'));
 
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 860,
+    minWidth: 980,
+    minHeight: 680,
     show: false,
-    webPreferences: { contextIsolation: true, sandbox: true }
+    title: 'Intelligent Removals Pro',
+    backgroundColor: '#0b1220',
+    webPreferences: commonWebPreferences()
   });
-
-  mainWindow.loadFile('index.html');
+  hardenWindow(mainWindow);
+  mainWindow.loadFile(path.join(__dirname, 'index.html'));
 
   mainWindow.once('ready-to-show', () => {
     setTimeout(() => {
-      if (!splash.isDestroyed()) splash.close();
+      if (splash && !splash.isDestroyed()) splash.close();
       mainWindow.show();
       if (isDev) mainWindow.webContents.openDevTools({ mode: 'detach' });
-    }, 2000);
+    }, 1200);
   });
 
   buildMenu();
@@ -105,9 +161,7 @@ function createWindow() {
 
 app.whenReady().then(() => {
   createWindow();
-  if (!isDev) {
-    autoUpdater.checkForUpdatesAndNotify();
-  }
+  if (!isDev) autoUpdater.checkForUpdatesAndNotify();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });

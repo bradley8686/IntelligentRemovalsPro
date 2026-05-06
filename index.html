@@ -1,42 +1,201 @@
 <!doctype html>
-<html lang='en'><head><meta charset='utf-8'/><meta name='viewport' content='width=device-width, initial-scale=1'/>
-<title>Intelligent Removals Pro — Dashboard</title>
-<style>
-body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;margin:0;background:#0f172a;color:#e5e7eb}
-header{background:linear-gradient(135deg,#0b63d6,#007BFF);padding:18px 20px;display:flex;align-items:center;gap:12px}
-header h1{margin:0;font-size:22px}
-header img{height:36px;width:auto;border-radius:6px;border:1px solid #195bb6;background:#0b63d61a;padding:4px}
-.container{max-width:1100px;margin:0 auto;padding:16px}
-.card{background:#111827;border:1px solid #1f2937;border-radius:12px;padding:14px;margin-bottom:12px}
-a.btn{display:inline-block;background:#0b63d6;border:1px solid #195bb6;padding:10px 12px;color:#fff;text-decoration:none;border-radius:10px}
-table{width:100%;border-collapse:collapse} th,td{border-bottom:1px solid #1f2937;padding:8px;text-align:left}
-.footer{margin-top:10px;opacity:.7;font-size:12px;display:flex;align-items:center;gap:8px}
-.footer img{height:18px;width:auto;opacity:.9}
-</style></head>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; img-src 'self' data:; style-src 'self' 'unsafe-inline';" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <title>Intelligent Removals Pro - Dashboard</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1220;
+      --panel: #101a2e;
+      --panel-2: #13213a;
+      --line: #24324a;
+      --text: #eef4ff;
+      --muted: #9fb0c7;
+      --blue: #2f7df6;
+      --cyan: #22c7d9;
+      --green: #29c76f;
+      --amber: #f5b84b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 22px;
+      background: #0d1729;
+      border-bottom: 1px solid var(--line);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .brand img { height: 40px; width: 40px; border-radius: 8px; background: #ffffff12; padding: 4px; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { margin-bottom: 2px; font-size: 22px; }
+    .subtitle { color: var(--muted); font-size: 13px; }
+    .app { max-width: 1180px; margin: 0 auto; padding: 18px; }
+    .grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 14px; align-items: start; }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+    }
+    .hero {
+      min-height: 250px;
+      display: grid;
+      align-content: center;
+      gap: 14px;
+      background:
+        linear-gradient(135deg, rgba(47,125,246,.18), transparent 42%),
+        linear-gradient(90deg, #101a2e, #0f2033);
+    }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 40px;
+      padding: 9px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 650;
+      cursor: pointer;
+    }
+    .btn.primary { background: var(--blue); border-color: var(--blue); color: white; }
+    .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .metric { background: #0c1526; border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+    .metric span { display: block; color: var(--muted); font-size: 12px; margin-bottom: 5px; }
+    .metric strong { font-size: 22px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid var(--line); padding: 9px 7px; text-align: left; font-size: 14px; }
+    th { color: var(--muted); font-weight: 650; }
+    .status { display: grid; gap: 10px; }
+    .status-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .pill { border: 1px solid var(--line); border-radius: 999px; padding: 5px 9px; color: var(--muted); font-size: 12px; }
+    .ok { color: #a7f3c6; border-color: rgba(41,199,111,.45); background: rgba(41,199,111,.08); }
+    footer { padding: 14px 18px 24px; color: var(--muted); font-size: 12px; text-align: center; }
+    @media (max-width: 860px) {
+      header { align-items: flex-start; flex-direction: column; }
+      .grid, .metrics { grid-template-columns: 1fr; }
+      .hero { min-height: 210px; }
+    }
+  </style>
+</head>
 <body>
-  <header class='hero'>
-    <img src='./assets/logo.png' alt='Logo'/>
-    <div>
-      <h1>Intelligent Removals Pro</h1>
-      <div style='opacity:.9'>AI video inventory · lorry recommendation</div>
+  <header>
+    <div class="brand">
+      <img src="./assets/logo.png" alt="Intelligent Removals Pro logo" />
+      <div>
+        <h1>Intelligent Removals Pro</h1>
+        <div class="subtitle">Video survey inventory, weight estimate, and vehicle recommendation</div>
+      </div>
     </div>
+    <a class="btn primary" href="./camera.html">Open AI Survey</a>
   </header>
-  <div class='container'>
-    <div class='card'>
-      <h3>Live AI Camera</h3>
-      <p>Detect items in real time using your webcam. We'll auto-calc weight, volume, and recommend a vehicle.</p>
-      <a class='btn' href='./camera.html'>Open AI Camera</a>
-    </div>
-    <div class='card'>
-      <h3>Mock Inventory Report</h3>
-      <table><thead><tr><th>Item</th><th>Qty</th><th>Weight (kg)</th><th>Volume (m³)</th></tr></thead><tbody id='tbody'></tbody></table>
-    </div>
-    <div class='footer'>
-      <img src='./assets/logo.png' alt='Logo'/><span>© Intelligent Removals Pro</span>
-    </div>
-  </div>
-<script>
-const MOCK=[{item:'sofa',qty:1,weight_kg:45,volume_m3:1.8},{item:'bed',qty:1,weight_kg:50,volume_m3:2.0},{item:'boxes',qty:10,weight_kg:100,volume_m3:3.0}];
-document.getElementById('tbody').innerHTML=MOCK.map(r=>`<tr><td>${r.item}</td><td>${r.qty}</td><td>${r.weight_kg}</td><td>${r.volume_m3}</td></tr>`).join('');
-</script>
-</body></html>
+
+  <main class="app">
+    <section class="grid">
+      <div class="panel hero">
+        <div>
+          <h2>Build a removals survey while you walk through the property.</h2>
+          <p class="subtitle">Use the camera detector, add customer/job details, adjust quantities by hand, and export a quote-ready JSON, CSV, or printable estimate.</p>
+        </div>
+        <div class="actions">
+          <a class="btn primary" href="./camera.html">Start Survey</a>
+          <a class="btn" href="./web/mobile.html">Open Phone App</a>
+          <button class="btn" id="downloadSample">Export Sample JSON</button>
+        </div>
+      </div>
+
+      <aside class="panel status">
+        <h3>Product Readiness</h3>
+        <div class="status-row"><span>Windows installer</span><span class="pill ok">Configured</span></div>
+        <div class="status-row"><span>Camera survey</span><span class="pill ok">Ready</span></div>
+        <div class="status-row"><span>Manual inventory edits</span><span class="pill ok">Ready</span></div>
+        <div class="status-row"><span>JSON / CSV exports</span><span class="pill ok">Ready</span></div>
+        <div class="status-row"><span>Printable quote estimate</span><span class="pill ok">Ready</span></div>
+        <div class="status-row"><span>Phone PWA</span><span class="pill ok">Ready</span></div>
+      </aside>
+    </section>
+
+    <section class="grid" style="margin-top:14px;">
+      <div class="panel">
+        <h3>Sample Inventory</h3>
+        <table>
+          <thead><tr><th>Item</th><th>Qty</th><th>Weight</th><th>Volume</th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div class="panel">
+        <h3>Sample Recommendation</h3>
+        <div class="metrics">
+          <div class="metric"><span>Weight</span><strong id="tw">0 kg</strong></div>
+          <div class="metric"><span>Volume</span><strong id="tv">0 m3</strong></div>
+          <div class="metric"><span>Vehicle</span><strong id="veh">-</strong></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>Copyright Intelligent Removals Pro. All rights reserved.</footer>
+
+  <script>
+    const sample = [
+      { item: 'Sofa', qty: 1, weight_kg: 45, volume_m3: 1.8 },
+      { item: 'Double bed', qty: 1, weight_kg: 50, volume_m3: 2.0 },
+      { item: 'Boxes', qty: 10, weight_kg: 100, volume_m3: 3.0 },
+      { item: 'Dining table', qty: 1, weight_kg: 20, volume_m3: 0.6 }
+    ];
+
+    function recommendVehicle(weight, volume) {
+      if (weight > 1200 || volume > 10) return '7.5T Truck';
+      if (weight > 750 || volume > 6) return 'Luton Van';
+      if (weight > 250 || volume > 2) return 'Medium Van';
+      return 'Small Van';
+    }
+
+    function totals(rows) {
+      return rows.reduce((acc, row) => {
+        acc.weight += row.weight_kg;
+        acc.volume += row.volume_m3;
+        return acc;
+      }, { weight: 0, volume: 0 });
+    }
+
+    function download(filename, text, type) {
+      const blob = new Blob([text], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    const total = totals(sample);
+    document.getElementById('tbody').innerHTML = sample.map((row) =>
+      `<tr><td>${row.item}</td><td>${row.qty}</td><td>${row.weight_kg} kg</td><td>${row.volume_m3.toFixed(1)} m3</td></tr>`
+    ).join('');
+    document.getElementById('tw').textContent = `${Math.round(total.weight)} kg`;
+    document.getElementById('tv').textContent = `${total.volume.toFixed(1)} m3`;
+    document.getElementById('veh').textContent = recommendVehicle(total.weight, total.volume);
+    document.getElementById('downloadSample').addEventListener('click', () => {
+      download('sample-removals-inventory.json', JSON.stringify({ items: sample, totals: total }, null, 2), 'application/json');
+    });
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js');
+  </script>
+</body>
+</html>

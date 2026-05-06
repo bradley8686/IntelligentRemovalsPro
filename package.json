@@ -8,19 +8,29 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
+    "test": "node --check main.js && node --check create-icon-pack.js",
     "build:win": "electron-builder --win nsis",
     "build:mac": "electron-builder --mac dmg",
     "build:linux": "electron-builder --linux AppImage deb",
     "build": "electron-builder -mwl"
   },
   "build": {
-    "appId": "com.intelligent.removals.pro",
-    "files": [
-      "**/*"
-    ],
+    "appId": "com.intelligentremovals.app",
+    "productName": "Intelligent Removals Pro",
+    "asar": true,
     "directories": {
       "buildResources": "build"
     },
+    "files": [
+      "**/*",
+      "!dist/**/*",
+      "!.git/**/*",
+      "!.github/**/*",
+      "!build/__tmp__/**/*",
+      "!*.bat",
+      "!*.zip",
+      "!penny_bot.txt"
+    ],
     "win": {
       "target": "nsis",
       "icon": "build/icon.ico"
@@ -35,6 +45,15 @@
         "deb"
       ]
     },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Intelligent Removals Pro"
+    },
     "publish": [
       {
         "provider": "github",
@@ -48,8 +67,13 @@
     "url": "https://github.com/bradley8686/IntelligentRemovalsPro"
   },
   "devDependencies": {
-    "electron": "^32.0.0",
-    "electron-builder": "^25.0.0"
+    "@fiahfy/icns": "^0.0.7",
+    "archiver": "^7.0.1",
+    "electron": "^39.1.1",
+    "electron-builder": "^25.0.0",
+    "icon-gen": "^5.0.0",
+    "png-to-ico": "^3.0.1",
+    "sharp": "^0.34.5"
   },
   "dependencies": {
     "electron-updater": "^6.1.7"

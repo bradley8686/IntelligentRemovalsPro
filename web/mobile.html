@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#2f7df6" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Removals Pro" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; connect-src 'self' https://cdn.jsdelivr.net https://storage.googleapis.com; img-src 'self' data:; media-src 'self' blob:; style-src 'self' 'unsafe-inline';" />
+  <link rel="manifest" href="../manifest.webmanifest" />
+  <title>Phone Survey - Intelligent Removals Pro</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1220;
+      --panel: #101a2e;
+      --field: #0c1526;
+      --line: #26364f;
+      --text: #eef4ff;
+      --muted: #9fb0c7;
+      --blue: #2f7df6;
+      --green: #29c76f;
+      --red: #ef596f;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 14px;
+      background: rgba(11, 18, 32, .94);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(12px);
+    }
+    .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .brand img { width: 34px; height: 34px; border-radius: 8px; background: #ffffff12; padding: 3px; }
+    h1 { margin: 0; font-size: 16px; line-height: 1.15; }
+    .status { color: var(--muted); font-size: 11px; margin-top: 2px; }
+    main { padding: 12px 12px 92px; max-width: 760px; margin: 0 auto; }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+    .camera {
+      position: relative;
+      min-height: 240px;
+      background: #050914;
+      border: 1px solid #050914;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    video { display: block; width: 100%; min-height: 240px; background: #050914; }
+    canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .wide { grid-column: 1 / -1; }
+    input, select, textarea, button {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--field);
+      color: var(--text);
+      padding: 9px 10px;
+      font: inherit;
+      min-width: 0;
+    }
+    textarea { min-height: 74px; resize: vertical; }
+    button {
+      cursor: pointer;
+      font-weight: 700;
+      background: #13213a;
+    }
+    button.primary { background: var(--blue); border-color: var(--blue); }
+    button.good { background: rgba(41,199,111,.16); border-color: rgba(41,199,111,.45); }
+    button.danger { background: rgba(239,89,111,.15); border-color: rgba(239,89,111,.45); color: #ffd3da; }
+    .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .muted { color: var(--muted); font-size: 12px; }
+    h2 { margin: 0 0 10px; font-size: 15px; }
+    .inventory { display: grid; gap: 8px; }
+    .item {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #0c1526;
+    }
+    .item strong { display: block; }
+    .item small { color: var(--muted); }
+    .qty { display: grid; grid-template-columns: 36px 32px 36px; align-items: center; gap: 5px; text-align: center; }
+    .qty button { min-height: 34px; padding: 0; }
+    .summary {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 11;
+      padding: 9px 10px calc(9px + var(--safe-bottom));
+      background: rgba(11, 18, 32, .96);
+      border-top: 1px solid var(--line);
+      backdrop-filter: blur(12px);
+    }
+    .summary-inner {
+      max-width: 760px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      align-items: center;
+    }
+    .metric { background: #0c1526; border: 1px solid var(--line); border-radius: 8px; padding: 8px; }
+    .metric span { display: block; color: var(--muted); font-size: 10px; margin-bottom: 2px; }
+    .metric strong { font-size: 14px; }
+    .install {
+      display: none;
+      margin-bottom: 10px;
+      border-color: rgba(41,199,111,.45);
+      background: rgba(41,199,111,.08);
+    }
+    @media (min-width: 720px) {
+      main { padding-bottom: 104px; }
+      video, .camera { min-height: 360px; }
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3"></script>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <img src="../assets/logo.png" alt="Intelligent Removals Pro" />
+      <div>
+        <h1>Phone Survey</h1>
+        <div class="status" id="status">Model: loading...</div>
+      </div>
+    </div>
+    <button id="saveBtn" class="good" style="max-width:92px;">Save</button>
+  </header>
+
+  <main>
+    <section class="panel install" id="installPanel">
+      <div class="row">
+        <div>
+          <strong>Install on this phone</strong>
+          <div class="muted">Add it to the home screen for app-style use.</div>
+        </div>
+        <button id="installBtn" class="good" style="max-width:96px;">Install</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Job Details</h2>
+      <div class="grid" id="jobForm">
+        <input id="customerName" placeholder="Customer name" autocomplete="name" />
+        <input id="customerPhone" placeholder="Phone" autocomplete="tel" />
+        <input id="pickupAddress" class="wide" placeholder="Collection address" autocomplete="street-address" />
+        <input id="deliveryAddress" class="wide" placeholder="Delivery address" />
+        <input id="moveDate" type="date" aria-label="Move date" />
+        <select id="propertySize" aria-label="Property size">
+          <option value="studio">Studio</option>
+          <option value="1-bed">1 bed</option>
+          <option value="2-bed" selected>2 bed</option>
+          <option value="3-bed">3 bed</option>
+          <option value="4-bed">4 bed</option>
+          <option value="5-bed+">5 bed+</option>
+        </select>
+        <input id="accessFee" type="number" min="0" step="5" value="0" placeholder="Access fee" />
+        <input id="packingFee" type="number" min="0" step="5" value="0" placeholder="Packing fee" />
+        <textarea id="jobNotes" class="wide" placeholder="Access notes, stairs, dismantling, fragile items"></textarea>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="row" style="margin-bottom:8px;">
+        <h2 style="margin:0;">Camera</h2>
+        <div class="muted" id="cameraHint">Tap start during survey</div>
+      </div>
+      <div class="grid" style="margin-bottom:8px;">
+        <button id="startBtn" class="primary">Start Camera</button>
+        <button id="stopBtn">Stop</button>
+      </div>
+      <div class="camera">
+        <video id="video" autoplay muted playsinline></video>
+        <canvas id="overlay"></canvas>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Add Item</h2>
+      <form class="grid" id="manualForm">
+        <select id="itemSelect" class="wide" aria-label="Item"></select>
+        <input id="qtyInput" type="number" min="1" step="1" value="1" aria-label="Quantity" />
+        <input id="weightInput" type="number" min="0" step="0.1" aria-label="Weight per item" />
+        <input id="volumeInput" type="number" min="0" step="0.1" aria-label="Volume per item" />
+        <button type="submit" class="primary">Add</button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <div class="row" style="margin-bottom:8px;">
+        <h2 style="margin:0;">Inventory</h2>
+        <button id="resetBtn" class="danger" style="max-width:86px;">Reset</button>
+      </div>
+      <div id="inventory" class="inventory"></div>
+      <div id="empty" class="muted" style="padding:12px;text-align:center;">Add items manually or start the camera.</div>
+    </section>
+
+    <section class="panel">
+      <h2>Send Quote</h2>
+      <div class="grid">
+        <button id="shareBtn" class="primary">Share</button>
+        <button id="jsonBtn">JSON</button>
+        <button id="csvBtn">CSV</button>
+        <button id="printBtn">Print</button>
+      </div>
+    </section>
+  </main>
+
+  <aside class="summary">
+    <div class="summary-inner">
+      <div class="metric"><span>Vehicle</span><strong id="vehicle">Small Van</strong></div>
+      <div class="metric"><span>Volume</span><strong id="volume">0 m3</strong></div>
+      <div class="metric"><span>Quote</span><strong id="quote">GBP 0</strong></div>
+    </div>
+  </aside>
+
+  <script>
+    let model;
+    let stream;
+    let video;
+    let canvas;
+    let ctx;
+    let running = false;
+    let lastFrameAt = 0;
+    let deferredInstallPrompt = null;
+
+    const draftKey = 'irp-mobile-survey-draft-v1';
+    const catalog = {
+      sofa: { label: 'Sofa', weight: 45, volume: 1.8 },
+      armchair: { label: 'Armchair', weight: 22, volume: 0.8 },
+      dining_table: { label: 'Dining table', weight: 28, volume: 0.8 },
+      chair: { label: 'Chair', weight: 8, volume: 0.2 },
+      double_bed: { label: 'Double bed', weight: 55, volume: 2.0 },
+      wardrobe: { label: 'Wardrobe', weight: 60, volume: 1.6 },
+      chest_of_drawers: { label: 'Chest of drawers', weight: 35, volume: 0.8 },
+      fridge: { label: 'Fridge freezer', weight: 75, volume: 1.0 },
+      washing_machine: { label: 'Washing machine', weight: 70, volume: 0.8 },
+      tv: { label: 'TV', weight: 18, volume: 0.25 },
+      boxes: { label: 'Boxes', weight: 10, volume: 0.25 },
+      bicycle: { label: 'Bicycle', weight: 14, volume: 0.9 },
+      plant: { label: 'Plant', weight: 8, volume: 0.25 }
+    };
+    const labelMap = {
+      couch: 'sofa',
+      sofa: 'sofa',
+      chair: 'chair',
+      'dining table': 'dining_table',
+      bed: 'double_bed',
+      refrigerator: 'fridge',
+      tv: 'tv',
+      book: 'boxes',
+      suitcase: 'boxes',
+      pottedplant: 'plant',
+      'potted plant': 'plant',
+      bicycle: 'bicycle'
+    };
+    const inventory = new Map();
+
+    function el(id) { return document.getElementById(id); }
+    function getItem(key) { return catalog[key] || { label: key.replace(/_/g, ' '), weight: 0, volume: 0 }; }
+    function mapLabel(label) { return labelMap[String(label || '').toLowerCase()] || null; }
+    function recommendVehicle(weight, volume) {
+      if (weight > 1200 || volume > 10) return '7.5T Truck';
+      if (weight > 750 || volume > 6) return 'Luton Van';
+      if (weight > 250 || volume > 2) return 'Medium Van';
+      return 'Small Van';
+    }
+    function vehicleRate(vehicle) {
+      return { 'Small Van': 170, 'Medium Van': 260, 'Luton Van': 390, '7.5T Truck': 620 }[vehicle] || 170;
+    }
+    function propertyMultiplier(size) {
+      return { studio: .85, '1-bed': 1, '2-bed': 1.15, '3-bed': 1.35, '4-bed': 1.6, '5-bed+': 1.9 }[size] || 1.15;
+    }
+    function jobDetails() {
+      return {
+        customer_name: el('customerName').value.trim(),
+        customer_phone: el('customerPhone').value.trim(),
+        collection_address: el('pickupAddress').value.trim(),
+        delivery_address: el('deliveryAddress').value.trim(),
+        move_date: el('moveDate').value,
+        property_size: el('propertySize').value,
+        access_fee_gbp: Number(el('accessFee').value) || 0,
+        packing_fee_gbp: Number(el('packingFee').value) || 0,
+        notes: el('jobNotes').value.trim()
+      };
+    }
+    function totals() {
+      let weight = 0;
+      let volume = 0;
+      for (const item of inventory.values()) {
+        weight += item.weight * item.qty;
+        volume += item.volume * item.qty;
+      }
+      return { weight, volume };
+    }
+    function quoteEstimate(total, vehicle) {
+      const job = jobDetails();
+      const base = vehicleRate(vehicle);
+      const volumeCharge = total.volume * 34;
+      const weightCharge = total.weight * .12;
+      const subtotal = (base + volumeCharge + weightCharge) * propertyMultiplier(job.property_size);
+      return Math.round((subtotal + job.access_fee_gbp + job.packing_fee_gbp) / 5) * 5;
+    }
+    function setInventory(key, qty, source, confidence) {
+      const item = getItem(key);
+      if (qty <= 0) inventory.delete(key);
+      else inventory.set(key, {
+        key,
+        label: item.label,
+        qty: Math.round(qty),
+        weight: Number(item.weight) || 0,
+        volume: Number(item.volume) || 0,
+        source,
+        confidence: confidence || 0
+      });
+      render();
+    }
+    function addInventory(key, qty, source, confidence) {
+      const current = inventory.get(key);
+      setInventory(key, (current ? current.qty : 0) + qty, source, confidence || (current && current.confidence) || 0);
+    }
+    function render() {
+      const rows = [...inventory.values()].sort((a, b) => a.label.localeCompare(b.label));
+      el('empty').style.display = rows.length ? 'none' : 'block';
+      el('inventory').innerHTML = rows.map((item) => `
+        <div class="item">
+          <div>
+            <strong>${item.label}</strong>
+            <small>${Math.round(item.weight * item.qty)} kg | ${(item.volume * item.qty).toFixed(1)} m3 | ${item.source === 'ai' ? `AI ${Math.round(item.confidence * 100)}%` : 'Manual'}</small>
+          </div>
+          <div class="qty">
+            <button type="button" data-dec="${item.key}">-</button>
+            <span>${item.qty}</span>
+            <button type="button" data-inc="${item.key}">+</button>
+          </div>
+        </div>
+      `).join('');
+      const total = totals();
+      const vehicle = recommendVehicle(total.weight, total.volume);
+      el('vehicle').textContent = vehicle;
+      el('volume').textContent = `${total.volume.toFixed(1)} m3`;
+      el('quote').textContent = `GBP ${quoteEstimate(total, vehicle).toLocaleString('en-GB')}`;
+      saveDraft(false);
+    }
+    function exportData() {
+      const total = totals();
+      const vehicle = recommendVehicle(total.weight, total.volume);
+      return {
+        job: jobDetails(),
+        items: [...inventory.values()].map((item) => ({
+          item: item.label,
+          qty: item.qty,
+          unit_weight_kg: item.weight,
+          unit_volume_m3: item.volume,
+          total_weight_kg: Number((item.weight * item.qty).toFixed(1)),
+          total_volume_m3: Number((item.volume * item.qty).toFixed(2)),
+          source: item.source,
+          confidence: Number((item.confidence || 0).toFixed(2))
+        })),
+        totals: { weight_kg: Number(total.weight.toFixed(1)), volume_m3: Number(total.volume.toFixed(2)) },
+        vehicle_recommendation: vehicle,
+        quote: { currency: 'GBP', estimated_total_gbp: quoteEstimate(total, vehicle) },
+        generated_at: new Date().toISOString()
+      };
+    }
+    function download(filename, text, type) {
+      const blob = new Blob([text], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+    function exportCsv() {
+      const data = exportData();
+      const jobRows = [
+        ['Customer', data.job.customer_name],
+        ['Phone', data.job.customer_phone],
+        ['Collection', data.job.collection_address],
+        ['Delivery', data.job.delivery_address],
+        ['Move date', data.job.move_date],
+        ['Vehicle', data.vehicle_recommendation],
+        ['Estimated quote GBP', data.quote.estimated_total_gbp],
+        []
+      ];
+      const itemRows = data.items.map((item) => [item.item, item.qty, item.total_weight_kg, item.total_volume_m3, item.source]);
+      const lines = [...jobRows, ['Item', 'Qty', 'Weight kg', 'Volume m3', 'Source'], ...itemRows]
+        .map((row) => row.map((value) => `"${String(value || '').replace(/"/g, '""')}"`).join(','));
+      download('phone-removals-survey.csv', lines.join('\n'), 'text/csv');
+    }
+    async function shareQuote() {
+      const data = exportData();
+      const text = `Quote for ${data.job.customer_name || 'customer'}: GBP ${data.quote.estimated_total_gbp}. Vehicle: ${data.vehicle_recommendation}. Volume: ${data.totals.volume_m3} m3.`;
+      if (navigator.share) await navigator.share({ title: 'Removals Quote', text });
+      else download('removals-quote.txt', text, 'text/plain');
+    }
+    function printQuote() {
+      const data = exportData();
+      const itemRows = data.items.map((item) => `<tr><td>${item.item}</td><td>${item.qty}</td><td>${item.total_volume_m3} m3</td></tr>`).join('');
+      const popup = window.open('', '_blank');
+      popup.document.write(`<!doctype html><title>Quote</title><style>body{font-family:Arial,sans-serif;margin:24px;color:#111}td,th{border-bottom:1px solid #ddd;padding:8px;text-align:left}table{width:100%;border-collapse:collapse}.total{font-size:24px;font-weight:700}</style><h1>Intelligent Removals Pro Quote</h1><p><strong>${data.job.customer_name || '-'}</strong><br>${data.job.collection_address || '-'}<br>${data.job.delivery_address || '-'}</p><table><tr><th>Item</th><th>Qty</th><th>Volume</th></tr>${itemRows}</table><p>Vehicle: ${data.vehicle_recommendation}</p><p class="total">GBP ${data.quote.estimated_total_gbp.toLocaleString('en-GB')}</p>`);
+      popup.document.close();
+      popup.print();
+    }
+    function saveDraft(showToast = true) {
+      const data = exportData();
+      localStorage.setItem(draftKey, JSON.stringify(data));
+      if (showToast) el('status').textContent = 'Draft saved';
+    }
+    function loadDraft() {
+      const raw = localStorage.getItem(draftKey);
+      if (!raw) return;
+      try {
+        const data = JSON.parse(raw);
+        const job = data.job || {};
+        el('customerName').value = job.customer_name || '';
+        el('customerPhone').value = job.customer_phone || '';
+        el('pickupAddress').value = job.collection_address || '';
+        el('deliveryAddress').value = job.delivery_address || '';
+        el('moveDate').value = job.move_date || '';
+        el('propertySize').value = job.property_size || '2-bed';
+        el('accessFee').value = job.access_fee_gbp || 0;
+        el('packingFee').value = job.packing_fee_gbp || 0;
+        el('jobNotes').value = job.notes || '';
+        (data.items || []).forEach((item) => {
+          const key = Object.keys(catalog).find((candidate) => catalog[candidate].label === item.item) || item.item.toLowerCase().replace(/\s+/g, '_');
+          if (!catalog[key]) catalog[key] = { label: item.item, weight: item.unit_weight_kg, volume: item.unit_volume_m3 };
+          setInventory(key, item.qty, item.source || 'manual', item.confidence || 0);
+        });
+      } catch {
+        localStorage.removeItem(draftKey);
+      }
+    }
+    function resizeCanvas() {
+      if (!video.videoWidth) return;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+    }
+    function drawBoxes(predictions) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.lineWidth = 2;
+      ctx.font = '14px system-ui';
+      predictions.forEach((prediction) => {
+        const key = mapLabel(prediction.class);
+        if (!key || prediction.score < .55) return;
+        const [x, y, w, h] = prediction.bbox;
+        ctx.strokeStyle = '#22c7d9';
+        ctx.fillStyle = 'rgba(34,199,217,.14)';
+        ctx.fillRect(x, y, w, h);
+        ctx.strokeRect(x, y, w, h);
+        ctx.fillStyle = '#eef4ff';
+        ctx.fillText(`${getItem(key).label} ${Math.round(prediction.score * 100)}%`, x + 4, Math.max(16, y + 16));
+      });
+    }
+    function updateCounts(predictions) {
+      const seen = new Set();
+      predictions.forEach((prediction) => {
+        if (prediction.score < .65) return;
+        const key = mapLabel(prediction.class);
+        if (!key || seen.has(key) || inventory.has(key)) return;
+        seen.add(key);
+        addInventory(key, 1, 'ai', prediction.score);
+      });
+    }
+    async function predictLoop(timestamp) {
+      if (!running) return;
+      if (!model || !video.videoWidth) {
+        requestAnimationFrame(predictLoop);
+        return;
+      }
+      if (timestamp - lastFrameAt < 550) {
+        requestAnimationFrame(predictLoop);
+        return;
+      }
+      lastFrameAt = timestamp;
+      const predictions = await model.detect(video);
+      drawBoxes(predictions);
+      updateCounts(predictions);
+      requestAnimationFrame(predictLoop);
+    }
+    async function startCamera() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+        video.srcObject = stream;
+        await video.play();
+        resizeCanvas();
+        running = true;
+        el('cameraHint').textContent = 'Scanning';
+        requestAnimationFrame(predictLoop);
+      } catch (error) {
+        el('cameraHint').textContent = `Camera error: ${error.message}`;
+      }
+    }
+    function stopCamera() {
+      running = false;
+      if (stream) stream.getTracks().forEach((track) => track.stop());
+      stream = null;
+      el('cameraHint').textContent = 'Stopped';
+      if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+    function fillDefaults() {
+      const item = getItem(el('itemSelect').value);
+      el('weightInput').value = item.weight;
+      el('volumeInput').value = item.volume;
+    }
+    async function init() {
+      video = el('video');
+      canvas = el('overlay');
+      ctx = canvas.getContext('2d');
+      el('itemSelect').innerHTML = Object.entries(catalog).map(([key, item]) => `<option value="${key}">${item.label}</option>`).join('');
+      fillDefaults();
+      loadDraft();
+      render();
+      if ('serviceWorker' in navigator) navigator.serviceWorker.register('../service-worker.js');
+      try {
+        model = await cocoSsd.load({ base: 'lite_mobilenet_v2' });
+        el('status').textContent = 'Model: ready';
+      } catch (error) {
+        el('status').textContent = 'Manual mode ready';
+      }
+    }
+
+    window.addEventListener('beforeinstallprompt', (event) => {
+      event.preventDefault();
+      deferredInstallPrompt = event;
+      el('installPanel').style.display = 'block';
+    });
+    el('installBtn').addEventListener('click', async () => {
+      if (!deferredInstallPrompt) return;
+      deferredInstallPrompt.prompt();
+      await deferredInstallPrompt.userChoice;
+      deferredInstallPrompt = null;
+      el('installPanel').style.display = 'none';
+    });
+    el('itemSelect').addEventListener('change', fillDefaults);
+    el('manualForm').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const key = el('itemSelect').value;
+      catalog[key].weight = Number(el('weightInput').value) || 0;
+      catalog[key].volume = Number(el('volumeInput').value) || 0;
+      addInventory(key, Number(el('qtyInput').value) || 1, 'manual', 1);
+    });
+    el('inventory').addEventListener('click', (event) => {
+      const button = event.target.closest('button');
+      if (!button) return;
+      if (button.dataset.inc) addInventory(button.dataset.inc, 1, 'manual', 1);
+      if (button.dataset.dec) addInventory(button.dataset.dec, -1, 'manual', 1);
+    });
+    el('jobForm').addEventListener('input', render);
+    el('startBtn').addEventListener('click', startCamera);
+    el('stopBtn').addEventListener('click', stopCamera);
+    el('saveBtn').addEventListener('click', () => saveDraft(true));
+    el('resetBtn').addEventListener('click', () => {
+      inventory.clear();
+      localStorage.removeItem(draftKey);
+      render();
+    });
+    el('shareBtn').addEventListener('click', shareQuote);
+    el('jsonBtn').addEventListener('click', () => download('phone-removals-survey.json', JSON.stringify(exportData(), null, 2), 'application/json'));
+    el('csvBtn').addEventListener('click', exportCsv);
+    el('printBtn').addEventListener('click', printQuote);
+    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('load', init);
+  </script>
+</body>
+</html>

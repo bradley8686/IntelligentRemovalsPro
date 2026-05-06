@@ -1,100 +1,561 @@
 <!doctype html>
-<html lang='en'><head><meta charset='utf-8'/><meta name='viewport' content='width=device-width,initial-scale=1'/>
-<title>AI Camera — Intelligent Removals Pro</title>
-<style>
-body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;margin:0;background:#0f172a;color:#e2e8f0}
-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#111827;border-bottom:1px solid #1f2937}
-header .left{display:flex;align-items:center;gap:10px}
-header img{height:28px;width:auto;border-radius:6px;border:1px solid #1f2937;background:#0b63d61a;padding:3px}
-a.btn{background:#2563eb;color:#fff;padding:8px 12px;border-radius:8px;text-decoration:none;margin-right:8px}
-.wrap{display:grid;grid-template-columns:1.3fr 1fr;gap:12px;padding:12px}
-.panel{background:#111827;border:1px solid #1f2937;border-radius:10px;padding:10px}
-#video{width:100%;height:auto;border-radius:10px;background:#000} #overlay{position:absolute;top:0;left:0}
-.stack{position:relative} table{width:100%;border-collapse:collapse} th,td{border-bottom:1px solid #1f2937;padding:8px 6px;text-align:left;font-size:14px}
-.controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px} button{padding:8px 10px;border-radius:8px;border:1px solid #374151;background:#1f2937;color:#e5e7eb;cursor:pointer}
-button.primary{background:#2563eb;border-color:#2563eb} .muted{color:#9ca3af;font-size:12px}
-.summary{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px} .card{background:#0d1426;border:1px solid #1f2937;border-radius:8px;padding:10px}
-</style>
-<script src='https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js'></script>
-<script src='https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3'></script>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; connect-src 'self' https://cdn.jsdelivr.net https://storage.googleapis.com; img-src 'self' data:; media-src 'self' blob:; style-src 'self' 'unsafe-inline';" />
+  <title>AI Survey - Intelligent Removals Pro</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1220;
+      --panel: #101a2e;
+      --panel-2: #13213a;
+      --line: #24324a;
+      --text: #eef4ff;
+      --muted: #9fb0c7;
+      --blue: #2f7df6;
+      --cyan: #22c7d9;
+      --green: #29c76f;
+      --red: #ef596f;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: #0d1729;
+      border-bottom: 1px solid var(--line);
+    }
+    header .left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    header img { height: 30px; width: 30px; border-radius: 7px; background: #ffffff12; padding: 3px; }
+    a, button { font: inherit; }
+    .btn, button {
+      min-height: 38px;
+      padding: 8px 11px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      color: var(--text);
+      cursor: pointer;
+      text-decoration: none;
+      font-weight: 650;
+    }
+    button.primary { background: var(--blue); border-color: var(--blue); }
+    button.danger { background: rgba(239,89,111,.15); border-color: rgba(239,89,111,.45); color: #ffd3da; }
+    button:disabled { opacity: .55; cursor: not-allowed; }
+    .wrap { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(380px, .8fr); gap: 12px; padding: 12px; }
+    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+    .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
+    .muted { color: var(--muted); font-size: 12px; }
+    .stack { position: relative; min-height: 280px; background: #050914; border-radius: 8px; overflow: hidden; border: 1px solid #050914; }
+    #video { display: block; width: 100%; height: auto; min-height: 280px; background: #050914; }
+    #overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+    .form { display: grid; grid-template-columns: 1.5fr .55fr .75fr .75fr auto; gap: 8px; margin-bottom: 10px; }
+    .job-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
+    .job-form .wide { grid-column: 1 / -1; }
+    input, select, textarea {
+      min-height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #0c1526;
+      color: var(--text);
+      padding: 8px 10px;
+      min-width: 0;
+    }
+    textarea { resize: vertical; min-height: 70px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid var(--line); padding: 8px 6px; text-align: left; font-size: 13px; }
+    th { color: var(--muted); font-weight: 650; }
+    td:last-child, th:last-child { text-align: right; }
+    .qty { display: inline-flex; align-items: center; gap: 5px; }
+    .qty button { width: 28px; height: 28px; min-height: 28px; padding: 0; }
+    .summary { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 10px; }
+    .card { background: #0c1526; border: 1px solid var(--line); border-radius: 8px; padding: 10px; min-height: 64px; }
+    .card span { display: block; color: var(--muted); font-size: 12px; margin-bottom: 4px; }
+    .card strong { font-size: 20px; }
+    .vehicle { grid-column: 1 / -1; border-color: rgba(34,199,217,.45); }
+    .quote { border-color: rgba(41,199,111,.45); }
+    .empty { padding: 16px; color: var(--muted); text-align: center; }
+    .confidence { color: #a7f3c6; }
+    @media (max-width: 960px) {
+      header { flex-direction: column; align-items: flex-start; }
+      .wrap, .form { grid-template-columns: 1fr; }
+      .summary { grid-template-columns: 1fr; }
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3"></script>
 </head>
 <body>
 <header>
-  <div class='left'>
-    <img src='./assets/logo.png' alt='Logo'/>
-    <strong>AI Camera — Live Inventory</strong>
+  <div class="left">
+    <img src="./assets/logo.png" alt="Intelligent Removals Pro logo" />
+    <strong>AI Survey - Live Inventory</strong>
+    <span class="muted" id="status">Model: loading...</span>
   </div>
-  <nav><a class='btn' href='./index.html'>Dashboard</a></nav>
+  <nav><a class="btn" href="./index.html">Dashboard</a></nav>
 </header>
-<div class='wrap'>
-  <div class='panel'>
-    <div class='controls'>
-      <button id='startBtn' class='primary'>Start Camera</button>
-      <button id='stopBtn'>Stop</button>
-      <button id='resetBtn'>Reset Counts</button>
-      <button id='exportBtn'>Export JSON</button>
-      <span class='muted' id='status'>Model: loading…</span>
+
+<main class="wrap">
+  <section class="panel">
+    <div class="controls">
+      <button id="startBtn" class="primary">Start Camera</button>
+      <button id="stopBtn">Stop</button>
+      <button id="resetBtn" class="danger">Reset</button>
+      <button id="exportJsonBtn">Export JSON</button>
+      <button id="exportCsvBtn">Export CSV</button>
+      <button id="printQuoteBtn">Print Quote</button>
     </div>
-    <div class='stack'>
-      <video id='video' autoplay muted playsinline></video>
-      <canvas id='overlay'></canvas>
+    <div class="stack">
+      <video id="video" autoplay muted playsinline></video>
+      <canvas id="overlay"></canvas>
     </div>
-  </div>
-  <div class='panel'>
-    <div class='controls'><div class='muted'>Detected items & totals:</div></div>
-    <table><thead><tr><th>Item</th><th>Qty</th><th>Weight (kg)</th><th>Volume (m³)</th></tr></thead><tbody id='tbody'></tbody></table>
-    <div class='summary'>
-      <div class='card'>Total Weight: <strong id='tw'>0 kg</strong></div>
-      <div class='card'>Total Volume: <strong id='tv'>0 m³</strong></div>
-      <div class='card' style='grid-column:1/-1;'>Recommended Vehicle: <strong id='veh'>—</strong></div>
+  </section>
+
+  <section class="panel">
+    <form class="job-form" id="jobForm">
+      <input id="customerName" placeholder="Customer name" autocomplete="name" />
+      <input id="customerPhone" placeholder="Phone" autocomplete="tel" />
+      <input id="pickupAddress" class="wide" placeholder="Collection address" />
+      <input id="deliveryAddress" class="wide" placeholder="Delivery address" />
+      <input id="moveDate" type="date" aria-label="Move date" />
+      <select id="propertySize" aria-label="Property size">
+        <option value="studio">Studio</option>
+        <option value="1-bed">1 bed</option>
+        <option value="2-bed" selected>2 bed</option>
+        <option value="3-bed">3 bed</option>
+        <option value="4-bed">4 bed</option>
+        <option value="5-bed+">5 bed+</option>
+      </select>
+      <input id="accessFee" type="number" min="0" step="5" value="0" placeholder="Access/parking fee" />
+      <input id="packingFee" type="number" min="0" step="5" value="0" placeholder="Packing fee" />
+      <textarea id="jobNotes" class="wide" placeholder="Access notes, stairs, dismantling, fragile items"></textarea>
+    </form>
+
+    <form class="form" id="manualForm">
+      <select id="itemSelect" aria-label="Item"></select>
+      <input id="qtyInput" type="number" min="1" step="1" value="1" aria-label="Quantity" />
+      <input id="weightInput" type="number" min="0" step="0.1" aria-label="Weight per item" />
+      <input id="volumeInput" type="number" min="0" step="0.1" aria-label="Volume per item" />
+      <button type="submit" class="primary">Add</button>
+    </form>
+
+    <table>
+      <thead>
+        <tr><th>Item</th><th>Qty</th><th>Weight</th><th>Volume</th><th>Source</th><th></th></tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div id="empty" class="empty">Start the camera or add items manually.</div>
+
+    <div class="summary">
+      <div class="card"><span>Total Weight</span><strong id="tw">0 kg</strong></div>
+      <div class="card"><span>Total Volume</span><strong id="tv">0 m3</strong></div>
+      <div class="card vehicle"><span>Recommended Vehicle</span><strong id="veh">Small Van</strong></div>
+      <div class="card quote"><span>Estimated Quote</span><strong id="quote">GBP 0</strong></div>
     </div>
-  </div>
-</div>
+  </section>
+</main>
+
 <script>
-let model, stream, ctx, canvas, video;
-const counts = {};
-const weightMap={sofa:45,bed:50,fridge:70,tv:25,box:10,chair:8,table:20,wardrobe:55,washing_machine:70};
-const volumeMap={sofa:1.8,bed:1.5,fridge:1.0,tv:0.4,box:0.25,chair:0.2,table:0.6,wardrobe:1.6,washing_machine:0.8};
-const LABEL_MAP={'couch':'sofa','refrigerator':'fridge','dining table':'table','book':'box'};
-function mapLabel(lbl){ const n=(lbl||'').toLowerCase(); return LABEL_MAP[n]||n.replace(/\s+/g,'_'); }
-async function init(){
-  video=document.getElementById('video'); canvas=document.getElementById('overlay'); ctx=canvas.getContext('2d');
-  try{ document.getElementById('status').textContent='Model: loading…'; model=await cocoSsd.load({base:'lite_mobilenet_v2'}); document.getElementById('status').textContent='Model: ready'; }
-  catch(e){ document.getElementById('status').textContent='Model failed to load: '+e.message; }
-}
-async function startCamera(){ try{
-  stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false});
-  video.srcObject=stream; await video.play(); resizeCanvas(); requestAnimationFrame(predictLoop);
-} catch(e){ alert('Camera error: '+e.message); } }
-function stopCamera(){ if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; } }
-function resizeCanvas(){ canvas.width=video.videoWidth; canvas.height=video.videoHeight; }
-function drawBoxes(preds){
-  ctx.clearRect(0,0,canvas.width,canvas.height); ctx.lineWidth=2; ctx.font='14px system-ui';
-  preds.forEach(p=>{ const [x,y,w,h]=p.bbox; ctx.strokeStyle='#22d3ee'; ctx.fillStyle='rgba(34,211,238,0.15)';
-    ctx.fillRect(x,y,w,h); ctx.strokeRect(x,y,w,h); ctx.fillStyle='#e5e7eb'; ctx.fillText(`${p.class} ${(p.score*100).toFixed(0)}%`, x+4, y+16); });
-}
-function tableAndTotals(){
-  const tbody=document.getElementById('tbody'); const rows=[]; let totalW=0,totalV=0;
-  Object.keys(counts).forEach(k=>{ const qty=Math.max(1,Math.round(counts[k])); const w=(weightMap[k]||0)*qty; const v=(volumeMap[k]||0)*qty;
-    totalW+=w; totalV+=v; rows.push(`<tr><td>${k.replace(/_/g,' ')}</td><td>${qty}</td><td>${w}</td><td>${v.toFixed(1)}</td></tr>`); });
-  tbody.innerHTML=rows.sort().join(''); document.getElementById('tw').textContent=Math.round(totalW)+' kg';
-  document.getElementById('tv').textContent=(Math.round(totalV*10)/10)+' m³'; document.getElementById('veh').textContent=recommendVehicle(totalW,totalV);
-}
-function recommendVehicle(weight,volume){ if(weight>1200||volume>10) return '7.5T Truck'; if(weight>750||volume>6) return 'Luton Van'; if(weight>250||volume>2) return 'Medium Van'; return 'Small Van'; }
-function updateCounts(preds){
-  let changed=false; preds.forEach(p=>{ if(p.score<0.6) return; const label=mapLabel(p.class); counts[label]=(counts[label]||0)+1/15; changed=true; });
-  if(changed) tableAndTotals();
-}
-async function predictLoop(){ if(!model||!video.videoWidth){ requestAnimationFrame(predictLoop); return; } const preds=await model.detect(video); drawBoxes(preds); updateCounts(preds); requestAnimationFrame(predictLoop); }
-function exportJSON(){
-  const items=Object.keys(counts).map(k=>({item:k,qty:Math.max(1,Math.round(counts[k]))}));
-  const out={ items, totals:{ weight_kg:parseInt(document.getElementById('tw').textContent)||0, volume_m3:parseFloat((document.getElementById('tv').textContent||'0').replace(' m³',''))||0 }, vehicle_recommendation:document.getElementById('veh').textContent, generated_at:new Date().toISOString() };
-  const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='live-inventory.json'; a.click(); URL.revokeObjectURL(url);
-}
-document.getElementById('startBtn').addEventListener('click', startCamera);
-document.getElementById('stopBtn').addEventListener('click', stopCamera);
-document.getElementById('exportBtn').addEventListener('click', exportJSON);
-document.getElementById('resetBtn').addEventListener('click', ()=>{ for(const k in counts) delete counts[k]; tableAndTotals(); });
-window.addEventListener('load', init); window.addEventListener('resize', resizeCanvas);
+  let model;
+  let stream;
+  let ctx;
+  let canvas;
+  let video;
+  let running = false;
+  let lastFrameAt = 0;
+
+  const catalog = {
+    sofa: { label: 'Sofa', weight: 45, volume: 1.8 },
+    armchair: { label: 'Armchair', weight: 22, volume: 0.8 },
+    dining_table: { label: 'Dining table', weight: 28, volume: 0.8 },
+    chair: { label: 'Chair', weight: 8, volume: 0.2 },
+    double_bed: { label: 'Double bed', weight: 55, volume: 2.0 },
+    wardrobe: { label: 'Wardrobe', weight: 60, volume: 1.6 },
+    chest_of_drawers: { label: 'Chest of drawers', weight: 35, volume: 0.8 },
+    fridge: { label: 'Fridge freezer', weight: 75, volume: 1.0 },
+    washing_machine: { label: 'Washing machine', weight: 70, volume: 0.8 },
+    tv: { label: 'TV', weight: 18, volume: 0.25 },
+    boxes: { label: 'Boxes', weight: 10, volume: 0.25 },
+    bicycle: { label: 'Bicycle', weight: 14, volume: 0.9 },
+    plant: { label: 'Plant', weight: 8, volume: 0.25 }
+  };
+
+  const labelMap = {
+    couch: 'sofa',
+    sofa: 'sofa',
+    chair: 'chair',
+    'dining table': 'dining_table',
+    bed: 'double_bed',
+    refrigerator: 'fridge',
+    tv: 'tv',
+    book: 'boxes',
+    suitcase: 'boxes',
+    pottedplant: 'plant',
+    'potted plant': 'plant',
+    bicycle: 'bicycle'
+  };
+
+  const inventory = new Map();
+
+  function moneySafeName(name) {
+    return String(name || '').replace(/[^\w\s.-]/g, '').trim();
+  }
+
+  function mapLabel(label) {
+    const normalized = String(label || '').toLowerCase();
+    return labelMap[normalized] || null;
+  }
+
+  function getItem(key) {
+    return catalog[key] || { label: key.replace(/_/g, ' '), weight: 0, volume: 0 };
+  }
+
+  function recommendVehicle(weight, volume) {
+    if (weight > 1200 || volume > 10) return '7.5T Truck';
+    if (weight > 750 || volume > 6) return 'Luton Van';
+    if (weight > 250 || volume > 2) return 'Medium Van';
+    return 'Small Van';
+  }
+
+  function vehicleRate(vehicle) {
+    return {
+      'Small Van': 170,
+      'Medium Van': 260,
+      'Luton Van': 390,
+      '7.5T Truck': 620
+    }[vehicle] || 170;
+  }
+
+  function propertyMultiplier(size) {
+    return {
+      studio: 0.85,
+      '1-bed': 1,
+      '2-bed': 1.15,
+      '3-bed': 1.35,
+      '4-bed': 1.6,
+      '5-bed+': 1.9
+    }[size] || 1.15;
+  }
+
+  function jobDetails() {
+    return {
+      customer_name: document.getElementById('customerName').value.trim(),
+      customer_phone: document.getElementById('customerPhone').value.trim(),
+      collection_address: document.getElementById('pickupAddress').value.trim(),
+      delivery_address: document.getElementById('deliveryAddress').value.trim(),
+      move_date: document.getElementById('moveDate').value,
+      property_size: document.getElementById('propertySize').value,
+      access_fee_gbp: Number(document.getElementById('accessFee').value) || 0,
+      packing_fee_gbp: Number(document.getElementById('packingFee').value) || 0,
+      notes: document.getElementById('jobNotes').value.trim()
+    };
+  }
+
+  function quoteEstimate(total, vehicle) {
+    const job = jobDetails();
+    const base = vehicleRate(vehicle);
+    const volumeCharge = total.volume * 34;
+    const weightCharge = total.weight * 0.12;
+    const subtotal = (base + volumeCharge + weightCharge) * propertyMultiplier(job.property_size);
+    const totalPrice = Math.round((subtotal + job.access_fee_gbp + job.packing_fee_gbp) / 5) * 5;
+    return {
+      currency: 'GBP',
+      base_vehicle_rate_gbp: base,
+      volume_charge_gbp: Number(volumeCharge.toFixed(2)),
+      weight_charge_gbp: Number(weightCharge.toFixed(2)),
+      property_multiplier: propertyMultiplier(job.property_size),
+      access_fee_gbp: job.access_fee_gbp,
+      packing_fee_gbp: job.packing_fee_gbp,
+      estimated_total_gbp: totalPrice
+    };
+  }
+
+  function setInventory(key, qty, source, confidence) {
+    const item = getItem(key);
+    const current = inventory.get(key) || { key, label: item.label, qty: 0, weight: item.weight, volume: item.volume, source: 'manual', confidence: 0 };
+    current.qty = Math.max(0, Math.round(qty));
+    current.source = source || current.source;
+    current.confidence = Math.max(current.confidence || 0, confidence || 0);
+    current.weight = Number(item.weight) || current.weight || 0;
+    current.volume = Number(item.volume) || current.volume || 0;
+    if (current.qty <= 0) inventory.delete(key);
+    else inventory.set(key, current);
+    renderInventory();
+  }
+
+  function addInventory(key, qty, source, confidence) {
+    const current = inventory.get(key);
+    setInventory(key, (current ? current.qty : 0) + qty, source, confidence);
+  }
+
+  function totals() {
+    let weight = 0;
+    let volume = 0;
+    for (const item of inventory.values()) {
+      weight += item.weight * item.qty;
+      volume += item.volume * item.qty;
+    }
+    return { weight, volume };
+  }
+
+  function renderInventory() {
+    const rows = [...inventory.values()].sort((a, b) => a.label.localeCompare(b.label));
+    document.getElementById('empty').style.display = rows.length ? 'none' : 'block';
+    document.getElementById('tbody').innerHTML = rows.map((row) => {
+      const source = row.source === 'ai' ? `<span class="confidence">AI ${Math.round(row.confidence * 100)}%</span>` : 'Manual';
+      return `<tr>
+        <td>${row.label}</td>
+        <td><span class="qty"><button data-dec="${row.key}" type="button">-</button>${row.qty}<button data-inc="${row.key}" type="button">+</button></span></td>
+        <td>${Math.round(row.weight * row.qty)} kg</td>
+        <td>${(row.volume * row.qty).toFixed(1)} m3</td>
+        <td>${source}</td>
+        <td><button data-remove="${row.key}" type="button">Remove</button></td>
+      </tr>`;
+    }).join('');
+
+    const total = totals();
+    document.getElementById('tw').textContent = `${Math.round(total.weight)} kg`;
+    document.getElementById('tv').textContent = `${total.volume.toFixed(1)} m3`;
+    const vehicle = recommendVehicle(total.weight, total.volume);
+    document.getElementById('veh').textContent = vehicle;
+    document.getElementById('quote').textContent = `GBP ${quoteEstimate(total, vehicle).estimated_total_gbp.toLocaleString('en-GB')}`;
+  }
+
+  function download(filename, text, type) {
+    const blob = new Blob([text], { type });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function exportRows() {
+    const total = totals();
+    const vehicle = recommendVehicle(total.weight, total.volume);
+    return {
+      job: jobDetails(),
+      items: [...inventory.values()].map((item) => ({
+        item: item.label,
+        qty: item.qty,
+        unit_weight_kg: item.weight,
+        unit_volume_m3: item.volume,
+        total_weight_kg: Number((item.weight * item.qty).toFixed(1)),
+        total_volume_m3: Number((item.volume * item.qty).toFixed(2)),
+        source: item.source,
+        confidence: Number((item.confidence || 0).toFixed(2))
+      })),
+      totals: {
+        weight_kg: Number(total.weight.toFixed(1)),
+        volume_m3: Number(total.volume.toFixed(2))
+      },
+      vehicle_recommendation: vehicle,
+      quote: quoteEstimate(total, vehicle),
+      generated_at: new Date().toISOString()
+    };
+  }
+
+  function exportJSON() {
+    download('removals-survey.json', JSON.stringify(exportRows(), null, 2), 'application/json');
+  }
+
+  function exportCSV() {
+    const exportData = exportRows();
+    const rows = exportData.items;
+    const header = ['Item', 'Qty', 'Unit weight kg', 'Unit volume m3', 'Total weight kg', 'Total volume m3', 'Source', 'Confidence'];
+    const csvRows = rows.map((row) => [
+      row.item, row.qty, row.unit_weight_kg, row.unit_volume_m3, row.total_weight_kg, row.total_volume_m3, row.source, row.confidence
+    ].map((value) => `"${String(value).replace(/"/g, '""')}"`).join(','));
+    const jobRows = [
+      ['Customer', exportData.job.customer_name],
+      ['Phone', exportData.job.customer_phone],
+      ['Collection', exportData.job.collection_address],
+      ['Delivery', exportData.job.delivery_address],
+      ['Move date', exportData.job.move_date],
+      ['Property size', exportData.job.property_size],
+      ['Vehicle', exportData.vehicle_recommendation],
+      ['Estimated quote GBP', exportData.quote.estimated_total_gbp],
+      []
+    ].map((row) => row.map((value) => `"${String(value || '').replace(/"/g, '""')}"`).join(','));
+    download('removals-survey.csv', [...jobRows, header.join(','), ...csvRows].join('\n'), 'text/csv');
+  }
+
+  function printQuote() {
+    const data = exportRows();
+    const itemRows = data.items.map((item) =>
+      `<tr><td>${item.item}</td><td>${item.qty}</td><td>${item.total_weight_kg} kg</td><td>${item.total_volume_m3} m3</td></tr>`
+    ).join('');
+    const win = window.open('', '_blank');
+    win.document.write(`<!doctype html><title>Removals Quote</title><style>
+      body{font-family:Arial,sans-serif;color:#111827;margin:28px} h1{margin-bottom:4px} .muted{color:#6b7280}
+      table{width:100%;border-collapse:collapse;margin-top:16px} th,td{border-bottom:1px solid #ddd;padding:8px;text-align:left}
+      .total{font-size:24px;font-weight:700;margin-top:18px}
+    </style><h1>Intelligent Removals Pro Quote</h1>
+    <div class="muted">Generated ${new Date(data.generated_at).toLocaleString('en-GB')}</div>
+    <p><strong>Customer:</strong> ${data.job.customer_name || '-'}<br>
+    <strong>Phone:</strong> ${data.job.customer_phone || '-'}<br>
+    <strong>Collection:</strong> ${data.job.collection_address || '-'}<br>
+    <strong>Delivery:</strong> ${data.job.delivery_address || '-'}<br>
+    <strong>Move date:</strong> ${data.job.move_date || '-'}</p>
+    <table><thead><tr><th>Item</th><th>Qty</th><th>Weight</th><th>Volume</th></tr></thead><tbody>${itemRows}</tbody></table>
+    <p><strong>Recommended vehicle:</strong> ${data.vehicle_recommendation}</p>
+    <p><strong>Notes:</strong> ${data.job.notes || '-'}</p>
+    <div class="total">Estimated quote: GBP ${data.quote.estimated_total_gbp.toLocaleString('en-GB')}</div>`);
+    win.document.close();
+    win.print();
+  }
+
+  function resizeCanvas() {
+    if (!video || !canvas || !video.videoWidth) return;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+  }
+
+  function drawBoxes(predictions) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.lineWidth = 2;
+    ctx.font = '14px system-ui';
+    predictions.forEach((prediction) => {
+      const mapped = mapLabel(prediction.class);
+      if (!mapped || prediction.score < 0.55) return;
+      const [x, y, w, h] = prediction.bbox;
+      ctx.strokeStyle = '#22c7d9';
+      ctx.fillStyle = 'rgba(34,199,217,.14)';
+      ctx.fillRect(x, y, w, h);
+      ctx.strokeRect(x, y, w, h);
+      ctx.fillStyle = '#eef4ff';
+      ctx.fillText(`${getItem(mapped).label} ${Math.round(prediction.score * 100)}%`, x + 4, Math.max(16, y + 16));
+    });
+  }
+
+  function updateCounts(predictions) {
+    const seen = new Set();
+    predictions.forEach((prediction) => {
+      if (prediction.score < 0.65) return;
+      const key = mapLabel(prediction.class);
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      const current = inventory.get(key);
+      if (!current) addInventory(key, 1, 'ai', prediction.score);
+      else if (current.source === 'ai') {
+        current.confidence = Math.max(current.confidence || 0, prediction.score);
+        inventory.set(key, current);
+        renderInventory();
+      }
+    });
+  }
+
+  async function predictLoop(timestamp) {
+    if (!running) return;
+    if (!model || !video.videoWidth) {
+      requestAnimationFrame(predictLoop);
+      return;
+    }
+    if (timestamp - lastFrameAt < 450) {
+      requestAnimationFrame(predictLoop);
+      return;
+    }
+    lastFrameAt = timestamp;
+    const predictions = await model.detect(video);
+    drawBoxes(predictions);
+    updateCounts(predictions);
+    requestAnimationFrame(predictLoop);
+  }
+
+  async function startCamera() {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+      video.srcObject = stream;
+      await video.play();
+      resizeCanvas();
+      running = true;
+      requestAnimationFrame(predictLoop);
+    } catch (error) {
+      alert(`Camera error: ${error.message}`);
+    }
+  }
+
+  function stopCamera() {
+    running = false;
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+      stream = null;
+    }
+    if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+
+  async function init() {
+    video = document.getElementById('video');
+    canvas = document.getElementById('overlay');
+    ctx = canvas.getContext('2d');
+    const itemSelect = document.getElementById('itemSelect');
+    itemSelect.innerHTML = Object.entries(catalog).map(([key, item]) => `<option value="${key}">${item.label}</option>`).join('');
+
+    function fillDefaults() {
+      const item = getItem(itemSelect.value);
+      document.getElementById('weightInput').value = item.weight;
+      document.getElementById('volumeInput').value = item.volume;
+    }
+    itemSelect.addEventListener('change', fillDefaults);
+    fillDefaults();
+
+    try {
+      document.getElementById('status').textContent = 'Model: loading...';
+      model = await cocoSsd.load({ base: 'lite_mobilenet_v2' });
+      document.getElementById('status').textContent = 'Model: ready';
+    } catch (error) {
+      document.getElementById('status').textContent = `Model failed: ${error.message}`;
+    }
+  }
+
+  document.getElementById('manualForm').addEventListener('submit', (event) => {
+    event.preventDefault();
+    const key = moneySafeName(document.getElementById('itemSelect').value);
+    const qty = Number(document.getElementById('qtyInput').value) || 1;
+    const weight = Number(document.getElementById('weightInput').value) || 0;
+    const volume = Number(document.getElementById('volumeInput').value) || 0;
+    if (catalog[key]) {
+      catalog[key].weight = weight;
+      catalog[key].volume = volume;
+    }
+    addInventory(key, qty, 'manual', 1);
+  });
+
+  document.getElementById('tbody').addEventListener('click', (event) => {
+    const button = event.target.closest('button');
+    if (!button) return;
+    const inc = button.dataset.inc;
+    const dec = button.dataset.dec;
+    const remove = button.dataset.remove;
+    if (inc) addInventory(inc, 1, 'manual', 1);
+    if (dec) addInventory(dec, -1, 'manual', 1);
+    if (remove) setInventory(remove, 0, 'manual', 1);
+  });
+
+  document.getElementById('startBtn').addEventListener('click', startCamera);
+  document.getElementById('stopBtn').addEventListener('click', stopCamera);
+  document.getElementById('exportJsonBtn').addEventListener('click', exportJSON);
+  document.getElementById('exportCsvBtn').addEventListener('click', exportCSV);
+  document.getElementById('printQuoteBtn').addEventListener('click', printQuote);
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    inventory.clear();
+    renderInventory();
+  });
+  document.getElementById('jobForm').addEventListener('input', renderInventory);
+  window.addEventListener('load', init);
+  window.addEventListener('resize', resizeCanvas);
 </script>
-</body></html>
+</body>
+</html>

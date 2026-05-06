@@ -1,22 +1,50 @@
 # Intelligent Removals Pro
 
-AI-powered video inventory + lorry recommendation.
+Video survey inventory software for removals teams. The app combines a live camera detector with customer/job details, manual inventory controls, weight and volume estimates, vehicle recommendations, quote estimates, JSON/CSV/print export, and an installable phone PWA.
 
 ## Run locally
-```
+
+```bash
 npm install
 npm start
 ```
 
+## Quality check
+
+```bash
+npm test
+```
+
 ## Build installers
-- Windows: `npm run build:win`
-- macOS: `npm run build:mac`
-- Linux: `npm run build:linux`
 
-## Auto-update (electron-updater)
-Publishing points to GitHub Releases (owner: bradley8686, repo: IntelligentRemovalsPro).
-Set `GH_TOKEN` in CI or locally when publishing.
+```bash
+npm run build:win
+npm run build:mac
+npm run build:linux
+```
 
-## Branding
-- App icon: replace `build/icon.ico` / `build/icon.icns`
-- Logo: `assets/logo.png` (used in splash, header, and about)
+## Phone app
+
+The mobile survey app lives at:
+
+```text
+web/mobile.html
+```
+
+When hosted over HTTPS, phones can open the URL and install it to the home screen. The phone app supports customer/job details, camera detection, manual inventory, local draft saving, quote estimate, share, JSON export, CSV export, and print.
+
+## Release notes
+
+- Windows installer is configured through `electron-builder` and NSIS.
+- Auto-update publishes through GitHub Releases.
+- Set `GH_TOKEN` before publishing a release.
+- Replace `assets/logo.png` and `build/icon.ico` / `build/icon.icns` when final brand assets are ready.
+- Host the PWA over HTTPS before sending it to phones.
+
+## Commercial readiness checklist
+
+- Add a privacy policy for camera use and exported survey data.
+- Add signed Windows and macOS builds before public sale.
+- Replace CDN-hosted TensorFlow scripts with packaged model assets for offline use.
+- Validate the item weights, volumes, and quote formula against your real survey/quote data.
+- Add login and subscription checks before public PWA launch.

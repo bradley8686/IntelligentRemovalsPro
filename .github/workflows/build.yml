@@ -10,7 +10,13 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
+        include:
+          - os: windows-latest
+            script: build:win
+          - os: macos-latest
+            script: build:mac
+          - os: ubuntu-latest
+            script: build:linux
 
     steps:
       - name: Checkout Repository
@@ -22,7 +28,7 @@ jobs:
           node-version: '20'
 
       - name: Install Dependencies
-        run: npm install
+        run: npm ci
 
       - name: Build Application
         env:
@@ -32,14 +38,7 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: |
-          if [ "${{ runner.os }}" == "Windows" ]; then
-            npm run build:win
-          elif [ "${{ runner.os }}" == "macOS" ]; then
-            npm run build:mac
-          else
-            npm run build:linux
-          fi
+        run: npm run ${{ matrix.script }}
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4

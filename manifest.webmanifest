@@ -1,0 +1,19 @@
+{
+  "name": "Intelligent Removals Pro",
+  "short_name": "Removals Pro",
+  "description": "Mobile removals survey, inventory, and quote estimator.",
+  "start_url": "./web/mobile.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b1220",
+  "theme_color": "#2f7df6",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "./assets/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
