@@ -39,6 +39,13 @@ Training pipeline files live under `training/`. Start with `training/TRAINING_PI
 
 Smart Scan backend setup lives in `SMART_SCAN.md`.
 
+The survey calculator now estimates:
+
+- recommended move cube in cubic metres and cubic feet
+- lorry size using usable cube and payload allowance
+- small, medium, large, and wardrobe box requirements
+- whether the estimate used scanned inventory or the property-size baseline
+
 ## Release notes
 
 - Windows installer is configured through `electron-builder` and NSIS.

@@ -1,9 +1,10 @@
-const CACHE_NAME = 'intelligent-removals-pro-v7';
+const CACHE_NAME = 'intelligent-removals-pro-v8';
 const APP_ASSETS = [
   './',
   './index.html',
   './camera.html',
   './web/mobile.html',
+  './survey-calculator.js',
   './manifest.webmanifest',
   './assets/logo.png'
 ];

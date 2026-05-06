@@ -47,7 +47,7 @@
     .brand img { width: 34px; height: 34px; border-radius: 8px; background: #ffffff12; padding: 3px; }
     h1 { margin: 0; font-size: 16px; line-height: 1.15; }
     .status { color: var(--muted); font-size: 11px; margin-top: 2px; }
-    main { padding: 12px 12px 92px; max-width: 760px; margin: 0 auto; }
+    main { padding: 12px 12px 154px; max-width: 760px; margin: 0 auto; }
     .panel {
       background: var(--panel);
       border: 1px solid var(--line);
@@ -122,18 +122,22 @@
       max-width: 760px;
       margin: 0 auto;
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 8px;
       align-items: center;
     }
     .metric { background: #0c1526; border: 1px solid var(--line); border-radius: 8px; padding: 8px; }
     .metric span { display: block; color: var(--muted); font-size: 10px; margin-bottom: 2px; }
-    .metric strong { font-size: 14px; }
+    .metric strong { display: block; font-size: 13px; line-height: 1.2; overflow-wrap: anywhere; }
     .install {
       display: none;
       margin-bottom: 10px;
       border-color: rgba(41,199,111,.45);
       background: rgba(41,199,111,.08);
+    }
+    @media (min-width: 520px) {
+      main { padding-bottom: 104px; }
+      .summary-inner { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     }
     @media (min-width: 720px) {
       main { padding-bottom: 104px; }
@@ -142,6 +146,7 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3"></script>
+  <script src="../survey-calculator.js"></script>
 </head>
 <body>
   <header>
@@ -181,6 +186,12 @@
           <option value="3-bed">3 bed</option>
           <option value="4-bed">4 bed</option>
           <option value="5-bed+">5 bed+</option>
+        </select>
+        <select id="contentsLevel" aria-label="Contents level">
+          <option value="light">Light contents</option>
+          <option value="normal" selected>Normal contents</option>
+          <option value="heavy">Heavy contents</option>
+          <option value="very_heavy">Very heavy contents</option>
         </select>
         <input id="accessFee" type="number" min="0" step="5" value="0" placeholder="Access fee" />
         <input id="packingFee" type="number" min="0" step="5" value="0" placeholder="Packing fee" />
@@ -255,8 +266,9 @@
 
   <aside class="summary">
     <div class="summary-inner">
-      <div class="metric"><span>Vehicle</span><strong id="vehicle">Small Van</strong></div>
-      <div class="metric"><span>Volume</span><strong id="volume">0 m3</strong></div>
+      <div class="metric"><span>Lorry</span><strong id="vehicle">Small Van</strong></div>
+      <div class="metric"><span>Cube</span><strong id="volume">0 m3</strong></div>
+      <div class="metric"><span>Boxes</span><strong id="boxesNeeded">0</strong></div>
       <div class="metric"><span>Quote</span><strong id="quote">GBP 0</strong></div>
     </div>
   </aside>
@@ -291,7 +303,7 @@
       fridge: { label: 'Fridge freezer', weight: 75, volume: 1.0 },
       washing_machine: { label: 'Washing machine', weight: 70, volume: 0.8 },
       tv: { label: 'TV', weight: 18, volume: 0.25 },
-      boxes: { label: 'Boxes', weight: 10, volume: 0.25 },
+      boxes: { label: 'Packed box', weight: 10, volume: 0.075 },
       bicycle: { label: 'Bicycle', weight: 14, volume: 0.9 },
       plant: { label: 'Plant', weight: 8, volume: 0.25 },
       microwave: { label: 'Microwave', weight: 15, volume: 0.18 },
@@ -328,14 +340,8 @@
     function el(id) { return document.getElementById(id); }
     function getItem(key) { return catalog[key] || { label: key.replace(/_/g, ' '), weight: 0, volume: 0 }; }
     function mapLabel(label) { return labelMap[String(label || '').toLowerCase()] || null; }
-    function recommendVehicle(weight, volume) {
-      if (weight > 1200 || volume > 10) return '7.5T Truck';
-      if (weight > 750 || volume > 6) return 'Luton Van';
-      if (weight > 250 || volume > 2) return 'Medium Van';
-      return 'Small Van';
-    }
     function vehicleRate(vehicle) {
-      return { 'Small Van': 170, 'Medium Van': 260, 'Luton Van': 390, '7.5T Truck': 620 }[vehicle] || 170;
+      return IRP_CALC.vehicleRate(vehicle);
     }
     function propertyMultiplier(size) {
       return { studio: .85, '1-bed': 1, '2-bed': 1.15, '3-bed': 1.35, '4-bed': 1.6, '5-bed+': 1.9 }[size] || 1.15;
@@ -348,6 +354,7 @@
         delivery_address: el('deliveryAddress').value.trim(),
         move_date: el('moveDate').value,
         property_size: el('propertySize').value,
+        contents_level: el('contentsLevel').value,
         access_fee_gbp: Number(el('accessFee').value) || 0,
         packing_fee_gbp: Number(el('packingFee').value) || 0,
         notes: el('jobNotes').value.trim()
@@ -362,10 +369,10 @@
       }
       return { weight, volume };
     }
-    function quoteEstimate(total, vehicle) {
+    function quoteEstimate(total, vehicle, calc) {
       const job = jobDetails();
-      const base = vehicleRate(vehicle);
-      const volumeCharge = total.volume * 34;
+      const base = vehicleRate(vehicle) * (calc && calc.vehicle ? calc.vehicle.trips : 1);
+      const volumeCharge = (calc ? calc.recommended_volume_m3 : total.volume) * 34;
       const weightCharge = total.weight * .12;
       const subtotal = (base + volumeCharge + weightCharge) * propertyMultiplier(job.property_size);
       return Math.round((subtotal + job.access_fee_gbp + job.packing_fee_gbp) / 5) * 5;
@@ -405,15 +412,16 @@
         </div>
       `).join('');
       const total = totals();
-      const vehicle = recommendVehicle(total.weight, total.volume);
-      el('vehicle').textContent = vehicle;
-      el('volume').textContent = `${total.volume.toFixed(1)} m3`;
-      el('quote').textContent = `GBP ${quoteEstimate(total, vehicle).toLocaleString('en-GB')}`;
+      const calc = IRP_CALC.calculate(total, jobDetails(), [...inventory.values()]);
+      el('vehicle').textContent = calc.vehicle.label;
+      el('volume').textContent = `${calc.recommended_volume_m3.toFixed(1)} m3 / ${calc.recommended_volume_cuft} cu ft`;
+      el('boxesNeeded').textContent = `${calc.boxes.remaining} left / ${calc.boxes.total}`;
+      el('quote').textContent = `GBP ${quoteEstimate(total, calc.vehicle.name, calc).toLocaleString('en-GB')}`;
       saveDraft(false);
     }
     function exportData() {
       const total = totals();
-      const vehicle = recommendVehicle(total.weight, total.volume);
+      const calc = IRP_CALC.calculate(total, jobDetails(), [...inventory.values()]);
       return {
         job: jobDetails(),
         items: [...inventory.values()].map((item) => ({
@@ -426,9 +434,18 @@
           source: item.source,
           confidence: Number((item.confidence || 0).toFixed(2))
         })),
-        totals: { weight_kg: Number(total.weight.toFixed(1)), volume_m3: Number(total.volume.toFixed(2)) },
-        vehicle_recommendation: vehicle,
-        quote: { currency: 'GBP', estimated_total_gbp: quoteEstimate(total, vehicle) },
+        totals: {
+          weight_kg: Number(total.weight.toFixed(1)),
+          surveyed_volume_m3: calc.surveyed_volume_m3,
+          surveyed_volume_cuft: calc.surveyed_volume_cuft,
+          recommended_cube_m3: calc.recommended_volume_m3,
+          recommended_cube_cuft: calc.recommended_volume_cuft,
+          baseline_cube_used: calc.baseline_used
+        },
+        vehicle_recommendation: calc.vehicle.label,
+        lorry: calc.vehicle,
+        boxes: calc.boxes,
+        quote: { currency: 'GBP', estimated_total_gbp: quoteEstimate(total, calc.vehicle.name, calc) },
         generated_at: new Date().toISOString()
       };
     }
@@ -460,7 +477,12 @@
         ['Collection', data.job.collection_address],
         ['Delivery', data.job.delivery_address],
         ['Move date', data.job.move_date],
+        ['Contents level', data.job.contents_level],
         ['Vehicle', data.vehicle_recommendation],
+        ['Recommended cube m3', data.totals.recommended_cube_m3],
+        ['Recommended cube cu ft', data.totals.recommended_cube_cuft],
+        ['Boxes required', data.boxes.total],
+        ['Boxes still needed', data.boxes.remaining],
         ['Estimated quote GBP', data.quote.estimated_total_gbp],
         []
       ];
@@ -471,7 +493,7 @@
     }
     async function shareQuote() {
       const data = exportData();
-      const text = `Quote for ${data.job.customer_name || 'customer'}: GBP ${data.quote.estimated_total_gbp}. Vehicle: ${data.vehicle_recommendation}. Volume: ${data.totals.volume_m3} m3.`;
+      const text = `Quote for ${data.job.customer_name || 'customer'}: GBP ${data.quote.estimated_total_gbp}. Lorry: ${data.vehicle_recommendation}. Cube: ${data.totals.recommended_cube_m3} m3 / ${data.totals.recommended_cube_cuft} cu ft. Boxes needed: ${data.boxes.remaining}.`;
       if (navigator.share) await navigator.share({ title: 'Removals Quote', text });
       else download('removals-quote.txt', text, 'text/plain');
     }
@@ -479,7 +501,7 @@
       const data = exportData();
       const itemRows = data.items.map((item) => `<tr><td>${item.item}</td><td>${item.qty}</td><td>${item.total_volume_m3} m3</td></tr>`).join('');
       const popup = window.open('', '_blank');
-      popup.document.write(`<!doctype html><title>Quote</title><style>body{font-family:Arial,sans-serif;margin:24px;color:#111}td,th{border-bottom:1px solid #ddd;padding:8px;text-align:left}table{width:100%;border-collapse:collapse}.total{font-size:24px;font-weight:700}</style><h1>Intelligent Removals Pro Quote</h1><p><strong>${data.job.customer_name || '-'}</strong><br>${data.job.collection_address || '-'}<br>${data.job.delivery_address || '-'}</p><table><tr><th>Item</th><th>Qty</th><th>Volume</th></tr>${itemRows}</table><p>Vehicle: ${data.vehicle_recommendation}</p><p class="total">GBP ${data.quote.estimated_total_gbp.toLocaleString('en-GB')}</p>`);
+      popup.document.write(`<!doctype html><title>Quote</title><style>body{font-family:Arial,sans-serif;margin:24px;color:#111}td,th{border-bottom:1px solid #ddd;padding:8px;text-align:left}table{width:100%;border-collapse:collapse}.total{font-size:24px;font-weight:700}</style><h1>Intelligent Removals Pro Quote</h1><p><strong>${data.job.customer_name || '-'}</strong><br>${data.job.collection_address || '-'}<br>${data.job.delivery_address || '-'}</p><table><tr><th>Item</th><th>Qty</th><th>Volume</th></tr>${itemRows}</table><p><strong>Lorry:</strong> ${data.vehicle_recommendation}<br><strong>Cube:</strong> ${data.totals.recommended_cube_m3} m3 / ${data.totals.recommended_cube_cuft} cu ft<br><strong>Boxes:</strong> ${data.boxes.remaining} still needed (${data.boxes.total} total)</p><p class="total">GBP ${data.quote.estimated_total_gbp.toLocaleString('en-GB')}</p>`);
       popup.document.close();
       popup.print();
     }
@@ -624,6 +646,7 @@
         el('deliveryAddress').value = job.delivery_address || '';
         el('moveDate').value = job.move_date || '';
         el('propertySize').value = job.property_size || '2-bed';
+        el('contentsLevel').value = job.contents_level || 'normal';
         el('accessFee').value = job.access_fee_gbp || 0;
         el('packingFee').value = job.packing_fee_gbp || 0;
         el('jobNotes').value = job.notes || '';
