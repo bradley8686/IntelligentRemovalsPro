@@ -197,11 +197,16 @@
         <button id="startBtn" class="primary">Start Camera</button>
         <button id="stopBtn">Stop</button>
       </div>
+      <div class="grid" style="margin-bottom:8px;">
+        <button id="smartScanBtn" class="good">Smart Scan</button>
+        <button id="smartScanSettingsBtn">API Setup</button>
+      </div>
       <div class="camera">
         <video id="video" autoplay muted playsinline></video>
         <canvas id="overlay"></canvas>
       </div>
       <div class="chips" id="seenLabels"></div>
+      <div class="muted" id="smartScanStatus" style="margin-top:8px;">Smart Scan: backend not configured yet.</div>
     </section>
 
     <section class="panel">
@@ -269,6 +274,7 @@
     let customModelConfig = null;
     let modelLoading = true;
     let modelLoadFailed = false;
+    let smartScanEndpoint = localStorage.getItem('irp-smart-scan-endpoint') || '';
     const scanIntervalMs = 240;
     const drawThreshold = 0.35;
     const addThreshold = 0.48;
@@ -443,6 +449,9 @@
       a.click();
       URL.revokeObjectURL(url);
     }
+    function labelKeys() {
+      return Object.keys(catalog);
+    }
     function exportCsv() {
       const data = exportData();
       const jobRows = [
@@ -481,6 +490,78 @@
         .map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(','))
         .join('\n');
       download('removals-training-labels.csv', csv, 'text/csv');
+    }
+    async function loadSmartScanConfig() {
+      try {
+        const response = await fetch('../smart-scan-config.json', { cache: 'no-store' });
+        if (!response.ok) throw new Error('No Smart Scan config');
+        const config = await response.json();
+        if (!smartScanEndpoint && config.endpoint) {
+          smartScanEndpoint = config.endpoint;
+          localStorage.setItem('irp-smart-scan-endpoint', smartScanEndpoint);
+        }
+      } catch {
+        // Local setup can still be entered manually.
+      }
+      el('smartScanStatus').textContent = smartScanEndpoint
+        ? 'Smart Scan: ready'
+        : 'Smart Scan: backend not configured yet.';
+    }
+    function configureSmartScanEndpoint() {
+      const current = smartScanEndpoint || '';
+      const next = prompt('Paste your Smart Scan backend URL', current);
+      if (next === null) return;
+      smartScanEndpoint = next.trim();
+      if (smartScanEndpoint) localStorage.setItem('irp-smart-scan-endpoint', smartScanEndpoint);
+      else localStorage.removeItem('irp-smart-scan-endpoint');
+      el('smartScanStatus').textContent = smartScanEndpoint ? 'Smart Scan: ready' : 'Smart Scan: backend not configured yet.';
+    }
+    function captureFrameDataUrl(maxSize = 768) {
+      if (!video || !video.videoWidth) throw new Error('Start the camera before Smart Scan.');
+      const scale = Math.min(1, maxSize / Math.max(video.videoWidth, video.videoHeight));
+      const width = Math.max(1, Math.round(video.videoWidth * scale));
+      const height = Math.max(1, Math.round(video.videoHeight * scale));
+      const captureCanvas = document.createElement('canvas');
+      captureCanvas.width = width;
+      captureCanvas.height = height;
+      captureCanvas.getContext('2d').drawImage(video, 0, 0, width, height);
+      return captureCanvas.toDataURL('image/jpeg', 0.72);
+    }
+    async function smartScan() {
+      if (!smartScanEndpoint) {
+        configureSmartScanEndpoint();
+        if (!smartScanEndpoint) return;
+      }
+      const button = el('smartScanBtn');
+      button.disabled = true;
+      button.textContent = 'Scanning...';
+      el('smartScanStatus').textContent = 'Smart Scan: sending one photo to cloud vision';
+      try {
+        const response = await fetch(smartScanEndpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image: captureFrameDataUrl(),
+            labels: labelKeys(),
+            job: jobDetails()
+          })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Smart Scan failed');
+        const suggestions = Array.isArray(data.items) ? data.items : [];
+        suggestions.forEach((item) => {
+          if (!catalog[item.label]) return;
+          addInventory(item.label, Math.max(1, Number(item.qty) || 1), 'ai', Number(item.confidence) || 0.75);
+        });
+        el('smartScanStatus').textContent = suggestions.length
+          ? `Smart Scan: added ${suggestions.length} suggestion(s)`
+          : 'Smart Scan: no removals items found - try a clearer angle';
+      } catch (error) {
+        el('smartScanStatus').textContent = `Smart Scan error: ${error.message}`;
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Smart Scan';
+      }
     }
     function searchTrainingExamples() {
       const label = el('trainingLabel').value;
@@ -711,6 +792,7 @@
       render();
       if ('serviceWorker' in navigator) navigator.serviceWorker.register('../service-worker.js');
       checkOnlineModelConfig();
+      loadSmartScanConfig();
       try {
         el('status').textContent = 'Model: loading detector...';
         if (typeof cocoSsd === 'undefined') throw new Error('AI script did not load');
@@ -755,6 +837,8 @@
     el('jobForm').addEventListener('input', render);
     el('startBtn').addEventListener('click', startCamera);
     el('stopBtn').addEventListener('click', stopCamera);
+    el('smartScanBtn').addEventListener('click', smartScan);
+    el('smartScanSettingsBtn').addEventListener('click', configureSmartScanEndpoint);
     el('saveBtn').addEventListener('click', () => saveDraft(true));
     el('resetBtn').addEventListener('click', () => {
       inventory.clear();

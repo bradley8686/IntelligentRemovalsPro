@@ -37,6 +37,8 @@ The phone app also includes a Training Capture section for collecting labelled p
 
 Training pipeline files live under `training/`. Start with `training/TRAINING_PIPELINE.md`.
 
+Smart Scan backend setup lives in `SMART_SCAN.md`.
+
 ## Release notes
 
 - Windows installer is configured through `electron-builder` and NSIS.

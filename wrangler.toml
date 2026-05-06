@@ -1,0 +1,6 @@
+name = "intelligent-removals-smart-scan"
+main = "workers/smart-scan-worker.js"
+compatibility_date = "2026-05-06"
+
+[vars]
+OPENAI_MODEL = "gpt-4.1-mini"
