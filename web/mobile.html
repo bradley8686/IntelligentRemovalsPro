@@ -267,6 +267,8 @@
     let deferredInstallPrompt = null;
     let capturedTrainingCount = 0;
     let customModelConfig = null;
+    let modelLoading = true;
+    let modelLoadFailed = false;
     const scanIntervalMs = 240;
     const drawThreshold = 0.35;
     const addThreshold = 0.48;
@@ -569,6 +571,12 @@
         });
       el('seenLabels').innerHTML = labels.length ? labels.join('') : '<span class="chip">Looking for furniture, boxes, bags, TV, fridge, table, chairs</span>';
     }
+    function withTimeout(promise, ms, label) {
+      return Promise.race([
+        promise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error(`${label} timed out`)), ms))
+      ]);
+    }
     function drawBoxes(predictions) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.lineWidth = 2;
@@ -598,6 +606,12 @@
     async function predictLoop(timestamp) {
       if (!running) return;
       if (!model || !video.videoWidth) {
+        if (modelLoadFailed) {
+          el('cameraHint').textContent = 'Camera on - manual mode, AI unavailable';
+          el('seenLabels').innerHTML = '<span class="chip">AI unavailable - add items manually or use Training Capture</span>';
+          return;
+        }
+        el('cameraHint').textContent = 'Camera on - waiting for AI model';
         requestAnimationFrame(predictLoop);
         return;
       }
@@ -665,7 +679,7 @@
         await video.play();
         resizeCanvas();
         running = true;
-        el('cameraHint').textContent = model ? 'Scanning' : 'Camera on - AI model still loading';
+        el('cameraHint').textContent = model ? 'Scanning' : (modelLoading ? 'Camera on - waiting for AI model' : 'Camera on - manual mode');
         requestAnimationFrame(predictLoop);
       } catch (error) {
         el('cameraHint').textContent = `Camera error: ${error.name || 'Error'} - ${error.message}`;
@@ -698,10 +712,17 @@
       if ('serviceWorker' in navigator) navigator.serviceWorker.register('../service-worker.js');
       checkOnlineModelConfig();
       try {
-        model = await cocoSsd.load({ base: 'lite_mobilenet_v2' });
+        el('status').textContent = 'Model: loading detector...';
+        if (typeof cocoSsd === 'undefined') throw new Error('AI script did not load');
+        model = await withTimeout(cocoSsd.load({ base: 'lite_mobilenet_v2' }), 12000, 'AI model');
+        modelLoading = false;
         el('status').textContent = 'Model: ready';
+        if (running) el('cameraHint').textContent = 'Scanning';
       } catch (error) {
-        el('status').textContent = 'Manual mode ready';
+        modelLoading = false;
+        modelLoadFailed = true;
+        el('status').textContent = `Manual mode ready - ${error.message}`;
+        if (running) el('cameraHint').textContent = 'Camera on - manual mode, AI unavailable';
       }
     }
 
