@@ -73,6 +73,7 @@
     "electron-builder": "^25.0.0",
     "icon-gen": "^5.0.0",
     "png-to-ico": "^3.0.1",
+    "qrcode": "^1.5.4",
     "sharp": "^0.34.5"
   },
   "dependencies": {
