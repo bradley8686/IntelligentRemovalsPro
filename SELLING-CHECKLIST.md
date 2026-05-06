@@ -9,6 +9,7 @@ Use this before listing or sending the app to customers.
 - Host the phone PWA on HTTPS.
 - Add login and Stripe subscription checks.
 - Validate item weights and volumes against real removals data.
+- Capture labelled removals photos and train the custom model.
 - Decide whether auto-update is enabled through GitHub Releases.
 - Replace temporary brand assets with final production artwork.
 

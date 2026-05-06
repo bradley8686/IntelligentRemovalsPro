@@ -33,6 +33,8 @@ web/mobile.html
 
 When hosted over HTTPS, phones can open the URL and install it to the home screen. The phone app supports customer/job details, camera detection, manual inventory, local draft saving, quote estimate, share, JSON export, CSV export, and print.
 
+The phone app also includes a Training Capture section for collecting labelled photos to train a removals-specific object detector. See `TRAINING.md`.
+
 ## Release notes
 
 - Windows installer is configured through `electron-builder` and NSIS.

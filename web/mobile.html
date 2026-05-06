@@ -205,6 +205,17 @@
     </section>
 
     <section class="panel">
+      <h2>Training Capture</h2>
+      <div class="muted" style="margin-bottom:8px;">Use this to collect labelled photos for the custom removals AI model.</div>
+      <div class="grid">
+        <select id="trainingLabel" class="wide" aria-label="Training label"></select>
+        <button id="captureTrainingBtn" class="good">Capture Labelled Photo</button>
+        <button id="downloadLabelsBtn">Labels CSV</button>
+      </div>
+      <div class="muted" id="trainingStatus" style="margin-top:8px;">Start the camera, choose the item label, then capture clear photos from different angles.</div>
+    </section>
+
+    <section class="panel">
       <h2>Add Item</h2>
       <form class="grid" id="manualForm">
         <select id="itemSelect" class="wide" aria-label="Item"></select>
@@ -252,6 +263,7 @@
     let running = false;
     let lastFrameAt = 0;
     let deferredInstallPrompt = null;
+    let capturedTrainingCount = 0;
     const scanIntervalMs = 240;
     const drawThreshold = 0.35;
     const addThreshold = 0.48;
@@ -418,6 +430,14 @@
       a.click();
       URL.revokeObjectURL(url);
     }
+    function downloadBlob(filename, blob) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
     function exportCsv() {
       const data = exportData();
       const jobRows = [
@@ -448,6 +468,38 @@
       popup.document.write(`<!doctype html><title>Quote</title><style>body{font-family:Arial,sans-serif;margin:24px;color:#111}td,th{border-bottom:1px solid #ddd;padding:8px;text-align:left}table{width:100%;border-collapse:collapse}.total{font-size:24px;font-weight:700}</style><h1>Intelligent Removals Pro Quote</h1><p><strong>${data.job.customer_name || '-'}</strong><br>${data.job.collection_address || '-'}<br>${data.job.delivery_address || '-'}</p><table><tr><th>Item</th><th>Qty</th><th>Volume</th></tr>${itemRows}</table><p>Vehicle: ${data.vehicle_recommendation}</p><p class="total">GBP ${data.quote.estimated_total_gbp.toLocaleString('en-GB')}</p>`);
       popup.document.close();
       popup.print();
+    }
+    function trainingLabelsCsv() {
+      const header = ['label_key', 'label_name', 'unit_weight_kg', 'unit_volume_m3'];
+      const rows = Object.entries(catalog).map(([key, item]) => [key, item.label, item.weight, item.volume]);
+      const csv = [header, ...rows]
+        .map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(','))
+        .join('\n');
+      download('removals-training-labels.csv', csv, 'text/csv');
+    }
+    function captureTrainingPhoto() {
+      if (!video || !video.videoWidth) {
+        el('trainingStatus').textContent = 'Start the camera first, then capture the item.';
+        return;
+      }
+      const label = el('trainingLabel').value;
+      const item = getItem(label);
+      const captureCanvas = document.createElement('canvas');
+      captureCanvas.width = video.videoWidth;
+      captureCanvas.height = video.videoHeight;
+      const captureCtx = captureCanvas.getContext('2d');
+      captureCtx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
+      captureCanvas.toBlob((blob) => {
+        if (!blob) {
+          el('trainingStatus').textContent = 'Could not capture photo. Try again.';
+          return;
+        }
+        capturedTrainingCount += 1;
+        const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const safeLabel = label.replace(/[^\w-]/g, '_');
+        downloadBlob(`training_${safeLabel}_${stamp}.jpg`, blob);
+        el('trainingStatus').textContent = `Captured ${item.label}. Total this session: ${capturedTrainingCount}.`;
+      }, 'image/jpeg', 0.88);
     }
     function saveDraft(showToast = true) {
       const data = exportData();
@@ -616,6 +668,7 @@
       canvas = el('overlay');
       ctx = canvas.getContext('2d');
       el('itemSelect').innerHTML = Object.entries(catalog).map(([key, item]) => `<option value="${key}">${item.label}</option>`).join('');
+      el('trainingLabel').innerHTML = Object.entries(catalog).map(([key, item]) => `<option value="${key}">${item.label}</option>`).join('');
       fillDefaults();
       loadDraft();
       render();
@@ -667,6 +720,8 @@
     el('jsonBtn').addEventListener('click', () => download('phone-removals-survey.json', JSON.stringify(exportData(), null, 2), 'application/json'));
     el('csvBtn').addEventListener('click', exportCsv);
     el('printBtn').addEventListener('click', printQuote);
+    el('captureTrainingBtn').addEventListener('click', captureTrainingPhoto);
+    el('downloadLabelsBtn').addEventListener('click', trainingLabelsCsv);
     window.addEventListener('resize', resizeCanvas);
     window.addEventListener('load', init);
   </script>
