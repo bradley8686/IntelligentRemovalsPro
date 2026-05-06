@@ -86,6 +86,8 @@
     .quote { border-color: rgba(41,199,111,.45); }
     .empty { padding: 16px; color: var(--muted); text-align: center; }
     .confidence { color: #a7f3c6; }
+    .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+    .chip { border: 1px solid var(--line); border-radius: 999px; padding: 6px 8px; color: #cfe0ff; background: #0c1526; font-size: 12px; }
     @media (max-width: 960px) {
       header { flex-direction: column; align-items: flex-start; }
       .wrap, .form { grid-template-columns: 1fr; }
@@ -119,6 +121,7 @@
       <video id="video" autoplay muted playsinline></video>
       <canvas id="overlay"></canvas>
     </div>
+    <div class="chips" id="seenLabels"></div>
   </section>
 
   <section class="panel">
@@ -174,6 +177,9 @@
   let video;
   let running = false;
   let lastFrameAt = 0;
+  const scanIntervalMs = 240;
+  const drawThreshold = 0.35;
+  const addThreshold = 0.48;
 
   const catalog = {
     sofa: { label: 'Sofa', weight: 45, volume: 1.8 },
@@ -188,7 +194,12 @@
     tv: { label: 'TV', weight: 18, volume: 0.25 },
     boxes: { label: 'Boxes', weight: 10, volume: 0.25 },
     bicycle: { label: 'Bicycle', weight: 14, volume: 0.9 },
-    plant: { label: 'Plant', weight: 8, volume: 0.25 }
+    plant: { label: 'Plant', weight: 8, volume: 0.25 },
+    microwave: { label: 'Microwave', weight: 15, volume: 0.18 },
+    laptop: { label: 'Laptop / small electronics', weight: 3, volume: 0.05 },
+    suitcase: { label: 'Suitcase / packed bag', weight: 18, volume: 0.35 },
+    lamp: { label: 'Lamp', weight: 5, volume: 0.18 },
+    mirror: { label: 'Mirror / picture', weight: 8, volume: 0.12 }
   };
 
   const labelMap = {
@@ -201,8 +212,16 @@
     tv: 'tv',
     book: 'boxes',
     suitcase: 'boxes',
+    backpack: 'suitcase',
+    handbag: 'suitcase',
     pottedplant: 'plant',
     'potted plant': 'plant',
+    vase: 'lamp',
+    microwave: 'microwave',
+    laptop: 'laptop',
+    cell_phone: 'laptop',
+    'cell phone': 'laptop',
+    clock: 'mirror',
     bicycle: 'bicycle'
   };
 
@@ -423,13 +442,25 @@
     canvas.height = video.videoHeight;
   }
 
+  function renderSeenLabels(predictions) {
+    const labels = predictions
+      .filter((prediction) => prediction.score >= drawThreshold)
+      .slice(0, 8)
+      .map((prediction) => {
+        const mapped = mapLabel(prediction.class);
+        const name = mapped ? getItem(mapped).label : prediction.class;
+        return `<span class="chip">${name} ${Math.round(prediction.score * 100)}%</span>`;
+      });
+    document.getElementById('seenLabels').innerHTML = labels.length ? labels.join('') : '<span class="chip">Looking for furniture, boxes, bags, TV, fridge, table, chairs</span>';
+  }
+
   function drawBoxes(predictions) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.lineWidth = 2;
     ctx.font = '14px system-ui';
     predictions.forEach((prediction) => {
       const mapped = mapLabel(prediction.class);
-      if (!mapped || prediction.score < 0.55) return;
+      if (!mapped || prediction.score < drawThreshold) return;
       const [x, y, w, h] = prediction.bbox;
       ctx.strokeStyle = '#22c7d9';
       ctx.fillStyle = 'rgba(34,199,217,.14)';
@@ -443,7 +474,7 @@
   function updateCounts(predictions) {
     const seen = new Set();
     predictions.forEach((prediction) => {
-      if (prediction.score < 0.65) return;
+      if (prediction.score < addThreshold) return;
       const key = mapLabel(prediction.class);
       if (!key || seen.has(key)) return;
       seen.add(key);
@@ -463,27 +494,80 @@
       requestAnimationFrame(predictLoop);
       return;
     }
-    if (timestamp - lastFrameAt < 450) {
+    if (timestamp - lastFrameAt < scanIntervalMs) {
       requestAnimationFrame(predictLoop);
       return;
     }
     lastFrameAt = timestamp;
     const predictions = await model.detect(video);
+    renderSeenLabels(predictions);
     drawBoxes(predictions);
     updateCounts(predictions);
     requestAnimationFrame(predictLoop);
   }
 
+  async function requestCameraStream() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw new Error('Camera is not available in this browser. Open the HTTPS phone link in Safari or Chrome.');
+    }
+    const attempts = [
+      {
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 640 },
+          height: { ideal: 480 }
+        },
+        audio: false
+      },
+      {
+        video: {
+          facingMode: 'environment'
+        },
+        audio: false
+      },
+      {
+        video: true,
+        audio: false
+      }
+    ];
+    let lastError;
+    for (const constraints of attempts) {
+      try {
+        return await navigator.mediaDevices.getUserMedia(constraints);
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    throw lastError || new Error('Camera permission was blocked.');
+  }
+
   async function startCamera() {
+    if (running) return;
+    const startButton = document.getElementById('startBtn');
+    startButton.disabled = true;
+    startButton.textContent = 'Starting...';
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+      document.getElementById('status').textContent = 'Camera: requesting permission';
+      stream = await requestCameraStream();
+      video.muted = true;
+      video.playsInline = true;
+      video.setAttribute('playsinline', '');
       video.srcObject = stream;
+      await new Promise((resolve) => {
+        if (video.readyState >= 1) resolve();
+        else video.onloadedmetadata = resolve;
+      });
       await video.play();
       resizeCanvas();
       running = true;
+      document.getElementById('status').textContent = model ? 'Camera: scanning' : 'Camera: on - model still loading';
       requestAnimationFrame(predictLoop);
     } catch (error) {
+      document.getElementById('status').textContent = `Camera error: ${error.name || 'Error'} - ${error.message}`;
       alert(`Camera error: ${error.message}`);
+    } finally {
+      startButton.disabled = false;
+      startButton.textContent = 'Start Camera';
     }
   }
 

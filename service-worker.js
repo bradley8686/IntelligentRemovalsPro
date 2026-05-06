@@ -1,4 +1,4 @@
-const CACHE_NAME = 'intelligent-removals-pro-v1';
+const CACHE_NAME = 'intelligent-removals-pro-v3';
 const APP_ASSETS = [
   './',
   './index.html',
